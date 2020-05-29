@@ -1,0 +1,28 @@
+﻿<Window x:Class="vo.Views.InputTextBox"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:vo.Views"
+        xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+        xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+        mc:Ignorable="d"
+        Title="InputTextBox" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="104*"/>
+            <RowDefinition Height="57*"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <dxe:TextEdit Name="TextInput"/>
+        </Grid>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <dx:SimpleButton Name="ButtonOk" Content="OK" Click="ButtonOk_Click" Margin="5" Grid.Column="0" />
+            <dx:SimpleButton Name="ButtonCancel" Content="CANCEL" Click="ButtonCancel_Click"  Margin="5" Grid.Column="1" />
+        </Grid>
+    </Grid>
+</Window>
