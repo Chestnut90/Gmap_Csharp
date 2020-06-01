@@ -1,7 +1,6 @@
 ﻿using GMap.NET;
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,83 +14,39 @@ namespace vo.Gmap
     {
         public CGMapPolygon(PointLatLng pos, string tag, int zIndex) : base(pos, tag, zIndex)
         {
-            this.MarkerType = Common.MarkerType.POLYGON;
+            this.MarkerType = MarkerType.POLYGON;
+            this.LatLngPoints = new List<PointLatLng>();
+            this.LatLngPoints.Add(pos);
         }
 
-        public void SetNextPoint(PointLatLng point)
+        private List<PointLatLng> LatLngPoints { get; set; }
+
+        protected PointCollection GetPointsFromLatLngCollection()
         {
-            this.PointLatLngs.Add(point);
-        }
+            PointCollection points = new PointCollection();
+            //List<Point> localPoints = new List<Point>();
 
-        /// <summary>
-        /// Override
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        protected override void PointLatLngs_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-
-        }
-
-        public override Path CreatePath(List<Point> localPath, bool addBlurEffect)
-        {
-            Path shape = (this.Shape as Path);
-
-            if (this.IsAlarm)
+            GPoint offset = this.Map.FromLatLngToLocal(this.Position);
+            foreach (var i in this.LatLngPoints)
             {
-
-            }
-            else
-            {
-                // init
+                var p = this.Map.FromLatLngToLocal(i);
+                points.Add(new Point(p.X - offset.X, p.Y - offset.Y));
             }
 
-            DrawPolygon((this.OriginGeometry as PathGeometry), localPath);
-
-            return shape;
+            return points;
         }
 
-        private void DrawPolygon(PathGeometry geometry, List<Point> points)
+        protected override void Alarm_Click(object sender, RoutedEventArgs e)
         {
-            PathFigureCollection figures = geometry.Figures;
-            PathFigure polygonFigure = new PathFigure();
-            polygonFigure.StartPoint = points[0];
-            PolyLineSegment seg = new PolyLineSegment();
-            seg.Points = new PointCollection(points);
-            polygonFigure.IsClosed = true;
-            polygonFigure.IsFilled = true;
-
-            polygonFigure.Segments.Add(seg);
-
-            if(figures.Count < 1)
-            {
-                figures.Add(polygonFigure);
-            }
-            else
-            {
-                figures[0] = polygonFigure;
-            }
-
+            throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Define Shape of Derived class.
-        /// </summary>
-        /// <returns></returns>
         protected override UIElement SetShape()
         {
-            this.Shape = new Path();
-            this.GeometryGroup = new GeometryGroup();
-            this.OriginGeometry = new PathGeometry();
-            this.AlarmGeometry = new PathGeometry();
-            this.GeometryGroup.Children.Add(OriginGeometry);
-            this.GeometryGroup.Children.Add(AlarmGeometry);
-            this.GeometryGroup.FillRule = FillRule.Nonzero;
-
-            (this.Shape as Path).Data = GeometryGroup;
-            (this.Shape as Path).Stroke = Brushes.Red;
-            (this.Shape as Path).StrokeThickness = 1.5;
-            (this.Shape as Path).Fill = Brushes.AliceBlue;
+            this.Shape = new Polygon();
+            (this.Shape as Polygon).Stroke = Brushes.Red;
+            (this.Shape as Polygon).StrokeThickness = 1.5;
+            (this.Shape as Polygon).Fill = Brushes.AliceBlue;
             return this.Shape;
         }
 
