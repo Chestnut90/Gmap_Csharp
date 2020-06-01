@@ -111,6 +111,7 @@ namespace vo.Views
         private GMapMarker drawingObject;   // Object to drawing. // default must be null.
         private int zIndex;                 // altitude of drawing object.
         private string tag;                 // tag -> id for drawing object.
+        
         private void InvokeResizing()
         {
             // for invoking resize event.
@@ -172,6 +173,10 @@ namespace vo.Views
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="drawState"></param>
         private void SetStartDrawing(DrawState drawState)
         {
             this.drawState = drawState;
@@ -193,8 +198,24 @@ namespace vo.Views
             return (x, y);
         }
 
+        /// <summary>
+        /// Mouse move event handling.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void GMapControl_MouseMove(object sender, MouseEventArgs e)
         {
+<<<<<<< HEAD
+=======
+            var localPoint = e.GetPosition(this);
+            PointLatLng pointLatLng = this.gMapControl.FromLocalToLatLng((int)localPoint.X, (int)localPoint.Y);
+            double width = Math.Abs(localPoint.X - start.X);
+            double height = Math.Abs(localPoint.Y - start.Y);
+
+            this.TextBlockLatLng.Text = $"{pointLatLng.Lat}, {pointLatLng.Lng}, " +
+                                        $"{this.gMapControl.Zoom}, {this.gMapControl.ZoomX}, {this.gMapControl.ZoomY}";
+
+>>>>>>> dev
             if (this.drawState.Equals(DrawState.None))
             {
                 return;
@@ -248,7 +269,7 @@ namespace vo.Views
                         this.gMapControl.Markers.Add(drawingObject);
                         return;
                     }
-                    (drawingObject as CGMapEllipse).Points[1] = pointLatLng;
+                    // Action -> 
 
                     break;
                 case DrawState.Rectangle:
@@ -261,7 +282,7 @@ namespace vo.Views
                         this.gMapControl.Markers.Add(drawingObject);
                         return;
                     }
-                    //(drawingObject as CGMapRectange).Point2 = pointLatLng;
+                    // Action ->
 
                     break;
                 case DrawState.Polygon:
@@ -273,8 +294,12 @@ namespace vo.Views
                         this.gMapControl.Markers.Add(drawingObject);
                         return;
                     }
+<<<<<<< HEAD
                     //(drawingObject as CGMapPolygon).Point2 = pointLatLng;
                     //(drawingObject as CGMapPolygon).SetShape(pointLatLng);
+=======
+                    (drawingObject as CGMapPolygon).SetNextPoint(pointLatLng);
+>>>>>>> dev
                     break;
                 case DrawState.Triangle:
                     if (!this.isDrawing)
@@ -285,7 +310,7 @@ namespace vo.Views
                         this.gMapControl.Markers.Add(drawingObject);
                         return;
                     }
-                    //(drawingObject as CGMapTriangle).Point2 = pointLatLng;
+
                     break;
                 case DrawState.None:
                     return;
@@ -315,8 +340,20 @@ namespace vo.Views
                 case Gmap.Action.MODIFICATION:
                     this.GMapMarker_Modification(param.Data, param.MarkerType);
                     break;
+<<<<<<< HEAD
                 case Gmap.Action.DELETE:
                     // TODO : delete marker.
+=======
+                case Gmap.Common.Action.DELETE:
+
+                    var deleteItem = this.gMapControl.Markers.Where(marker => marker.Tag.Equals(param.Sender)).FirstOrDefault();
+                    if (deleteItem is null)
+                    {
+                        return;
+                    }
+                    this.gMapControl.Markers.Remove(deleteItem);
+
+>>>>>>> dev
                     break;
                 case Gmap.Action.ALARM:
 

@@ -116,7 +116,12 @@ namespace vo.Gmap
         {
             PointLatLng point1 = this.PointLatLngs[0];
             PointLatLng point2 = this.PointLatLngs[1];
+<<<<<<< HEAD
             return LatLngCommon.CalcTwo(point1, point2, addDistance);
+=======
+            //return LatLngCommon.CalcOuterRectangle(point1, point2, addDistance);
+            return LatLngCommon.CalcFind(point1, point2, addDistance);
+>>>>>>> dev
         }
 
         public override Path CreatePath(List<Point> localPath, bool addBlurEffect)

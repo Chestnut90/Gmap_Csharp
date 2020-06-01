@@ -1,9 +1,0 @@
-D:\Dev\vo\Forms\bin\x64\Debug\Forms.exe.config
-D:\Dev\vo\Forms\bin\x64\Debug\Forms.exe
-D:\Dev\vo\Forms\bin\x64\Debug\Forms.pdb
-D:\Dev\vo\Forms\obj\x64\Debug\Forms.csprojAssemblyReference.cache
-D:\Dev\vo\Forms\obj\x64\Debug\Forms.Properties.Resources.resources
-D:\Dev\vo\Forms\obj\x64\Debug\Forms.csproj.GenerateResource.cache
-D:\Dev\vo\Forms\obj\x64\Debug\Forms.csproj.CoreCompileInputs.cache
-D:\Dev\vo\Forms\obj\x64\Debug\Forms.exe
-D:\Dev\vo\Forms\obj\x64\Debug\Forms.pdb
