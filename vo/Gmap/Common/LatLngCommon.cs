@@ -102,20 +102,17 @@ namespace vo.Gmap.Common
         /// <returns></returns>
         public static PointLatLng CalcCenterOuterCircle(PointLatLng top, PointLatLng leftBottom, PointLatLng rightBottom)
         {
-            // Middle point of left and right side
-            PointLatLng leftMid = new PointLatLng((top.Lat + leftBottom.Lat) / 2, (top.Lng + leftBottom.Lng) / 2);
-            PointLatLng rightMid = new PointLatLng((top.Lat + rightBottom.Lat) / 2, (top.Lng + rightBottom.Lng) / 2);
 
             var matrixA = Matrix<double>.Build.DenseOfArray(new double[2, 2]
             {
                 { (leftBottom.Lng - top.Lng), (leftBottom.Lat - top.Lat)},
-                { (rightBottom.Lng - top.Lng), (rightBottom.Lat - top.Lat)}
+                { (rightBottom.Lng - leftBottom.Lng), (rightBottom.Lat - leftBottom.Lat)}
             });
 
             var matrixB = Matrix<double>.Build.DenseOfArray(new double[2, 1]
             {
                 { (Math.Pow(leftBottom.Lng, 2) - Math.Pow(top.Lng, 2) + Math.Pow(leftBottom.Lat, 2) - Math.Pow(top.Lat, 2)) },
-                { (Math.Pow(rightBottom.Lng, 2) - Math.Pow(top.Lng, 2) + Math.Pow(rightBottom.Lat, 2) - Math.Pow(top.Lat, 2)) }
+                { (Math.Pow(rightBottom.Lng, 2) - Math.Pow(leftBottom.Lng, 2) + Math.Pow(rightBottom.Lat, 2) - Math.Pow(leftBottom.Lat, 2)) }
             });
             matrixB = matrixB.Multiply(0.5);
 
@@ -126,9 +123,6 @@ namespace vo.Gmap.Common
 
         public static (PointLatLng, PointLatLng) CalcFind(PointLatLng leftTop, PointLatLng rightBottom, double distance)
         {
-            // top - A
-            // left bottom - B
-            // right bottom - C
 
             // 1. get vertexies.
             PointLatLng A = new PointLatLng(leftTop.Lat, (leftTop.Lng + rightBottom.Lng) / 2);
@@ -146,7 +140,26 @@ namespace vo.Gmap.Common
 
             // 3. new top
             //double dis_IA = CalcDistance(I, A); // 중심과 Top의 길이.
+            double distance_center_top = Math.Sqrt(Math.Pow(I.Lat - A.Lat, 2) + Math.Pow(I.Lng - A.Lng, 2));
+
+            // right slope point.
+            var matrixA = Matrix<double>.Build.DenseOfArray(new double[2, 2]
+            {
+                {(A.Lng - I.Lng), (A.Lat - I.Lat) },
+                {(C.Lng - I.Lng), (C.Lat - I.Lat) }
+            });
+
+            var matrixB = Matrix<double>.Build.DenseOfArray(new double[2, 1]
+            {
+                {((A.Lng - I.Lng)*I.Lng + (A.Lat - I.Lat)*I.Lat) },
+                {((C.Lng - I.Lng)*I.Lng + (C.Lat - I.Lat)*I.Lat) }
+            });
+
+            var resultMatrix = matrixA.PseudoInverse().Multiply(matrixB);
+            PointLatLng slopePoint = new PointLatLng(resultMatrix.At(1, 0), resultMatrix.At(0, 0));
+
             double dis_IA = Math.Sqrt(Math.Pow(I.Lat - A.Lat, 2) + Math.Pow(I.Lng - A.Lng, 2));
+            double real_dis_IA = CalcDistance(I, A);
             var vector_AC = Vector<double>.Build.DenseOfArray(new double[] { (C.Lng - A.Lng), (C.Lat - A.Lat) });
             var vector_AB = Vector<double>.Build.DenseOfArray(new double[] { (B.Lng - A.Lng), (B.Lat - A.Lat) });
             double dot_product1 = vector_AB.DotProduct(vector_AC);
@@ -154,14 +167,18 @@ namespace vo.Gmap.Common
             double dis_AB = Math.Sqrt(Math.Pow(vector_AB.At(0), 2) + Math.Pow(vector_AB.At(1), 2));
             double angle_A = Math.Acos(dot_product1 / (dis_AB * dis_AC));// * 180.0 / Math.PI;
             double innerRadius = Math.Sin(angle_A / 2) * dis_IA;
+            double real_innerRadius = Math.Sin(angle_A / 2) * real_dis_IA;
+
             double dis_ItoNewTop = dis_IA * (innerRadius + distance) / innerRadius;
-            double bearing_IA = CalcBearing(I.Lat, A.Lat, I.Lng, A.Lng);
-            var newTop = CalcDistanceAndBearing(I, dis_ItoNewTop, bearing_IA);
+            double real_dis_ItoNewTop = real_dis_IA * (real_innerRadius + distance) / real_innerRadius;
+            double bearing_IA = CalcBearing(A.Lat, I.Lat, A.Lng, I.Lng);
+            var newTop = CalcDistanceAndBearing(I, real_dis_ItoNewTop, bearing_IA);
 
 
             // 4. new right Bottom
             //double dis_IC = CalcDistance(I, C);
             double dis_IC = Math.Sqrt(Math.Pow(I.Lat - C.Lat, 2) + Math.Pow(I.Lng - C.Lng, 2));
+            double real_dis_IC = CalcDistance(I, C);
             var vector_CA = Vector<double>.Build.DenseOfArray(new double[] { (A.Lng - C.Lng), (A.Lat - C.Lat) });
             var vector_CB = Vector<double>.Build.DenseOfArray(new double[] { (B.Lng - C.Lng), (B.Lat - C.Lat) });
             double dot_product2 = vector_CA.DotProduct(vector_CB);
@@ -169,9 +186,11 @@ namespace vo.Gmap.Common
             double dis_CB = Math.Sqrt(Math.Pow(vector_CB.At(0), 2) + Math.Pow(vector_CB.At(1), 2));
             double angle_C = Math.Acos(dot_product2 / (dis_CA * dis_CB));// * 180.0 / Math.PI;
             double innerRaidus2 = Math.Sin(angle_C / 2) * dis_IC;// check
+            
             double dis_ItoNewRightBottom = dis_IC * (innerRadius + distance) / innerRadius;
-            double bearing_IC = CalcBearing(I.Lat, C.Lat, I.Lng, C.Lng);
-            var newRightBottom = CalcDistanceAndBearing(I, dis_ItoNewRightBottom, bearing_IC);
+            double real_dis_ItoNewRightBottom = real_dis_IC * (real_innerRadius + distance) / real_innerRadius;
+            double bearing_IC = CalcBearing(C.Lat, I.Lat, C.Lng, I.Lng);
+            var newRightBottom = CalcDistanceAndBearing(I, real_dis_ItoNewRightBottom, bearing_IC);
 
             double left_lng = 2 * newTop.Item1.Lng - newRightBottom.Item1.Lng;
             PointLatLng newLeftTop = new PointLatLng(newTop.Item1.Lat, left_lng);
