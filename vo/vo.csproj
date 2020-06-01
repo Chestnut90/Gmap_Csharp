@@ -130,7 +130,7 @@
     <Compile Include="Gmap\CGMapRectangle.cs" />
     <Compile Include="Gmap\CGMapTriangle.cs" />
     <Compile Include="Gmap\Common\LatLngCommon.cs" />
-    <Compile Include="Gmap\GMapMessage.cs" />
+    <Compile Include="Gmap\Common\GMapMessage.cs" />
     <Compile Include="Views\ProcessWindow.xaml.cs">
       <DependentUpon>ProcessWindow.xaml</DependentUpon>
     </Compile>

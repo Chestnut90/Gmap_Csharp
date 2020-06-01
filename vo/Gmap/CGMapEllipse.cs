@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using vo.Gmap.Common;
 using vo.Views;
 
 namespace vo.Gmap
@@ -26,8 +27,6 @@ namespace vo.Gmap
         public CGMapEllipse(PointLatLng pos, string tag, int zIndex) : base(pos, tag, zIndex)
         {
             this.MarkerType = MarkerType.ELLIPSE;
-            this.PointLatLngs = new ObservableCollection<PointLatLng>() { pos, pos };// GMapControl에서 shape null 방지.
-            this.PointLatLngs.CollectionChanged += PointLatLngs_CollectionChanged;
         }
 
         /// <summary>
@@ -35,7 +34,7 @@ namespace vo.Gmap
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void PointLatLngs_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        protected override void PointLatLngs_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             int count = this.PointLatLngs.Count;
 
@@ -84,128 +83,72 @@ namespace vo.Gmap
         {
             Path shape = (this.Shape as Path);
 
-            Point center = new Point((localPath[0].X + localPath[1].X) / 2, (localPath[0].Y + localPath[1].Y) / 2);
-
             if (this.IsAlarm)
             {
                 if (localPath.Count == 4)
                 {
-                    double width = Math.Abs(localPath[2].X - center.X);
-                    double height = Math.Abs(localPath[3].Y - center.Y);
-                    DrawEllipse((this.AlarmGeometry as EllipseGeometry), center, width, height);
+                    DrawEllipse((this.AlarmGeometry as EllipseGeometry), localPath[2], localPath[3]);
 
                 }
             }
             else
             {
-                DrawEllipse((this.AlarmGeometry as EllipseGeometry), default(Point));
+                DrawEllipse((this.AlarmGeometry as EllipseGeometry), default(Point), default(Point));
             }
 
-            double radiusX = Math.Abs(localPath[0].X - localPath[1].X) / 2;
-            double radiusY = Math.Abs(localPath[0].Y - localPath[1].Y) / 2;
-            DrawEllipse((this.OriginGeometry as EllipseGeometry), center, radiusX, radiusY);
+            DrawEllipse((this.OriginGeometry as EllipseGeometry), localPath[0], localPath[1]);
 
             return shape;
         }
 
         /// <summary>
-        /// draw ellipse with geometry
+        /// Draw Ellipse
         /// </summary>
-        /// <param name="ellipseGeometry"></param>
-        /// <param name="point1"></param>
-        /// <param name="point2"></param>
-        /// <param name="isInit"></param>
-        private void DrawEllipse(EllipseGeometry ellipseGeometry, Point center, double radiusX = 0.0, double radiusY = 0.0)
+        /// <param name="ellipse"></param>
+        /// <param name="leftTop"></param>
+        /// <param name="rightBottom"></param>
+        private void DrawEllipse(EllipseGeometry ellipse, Point leftTop, Point rightBottom)
         {
-
-            if (center.Equals(default(Point)))
+            if (leftTop.Equals(default(Point)) & rightBottom.Equals(default(Point)))
             {
-                ellipseGeometry.Center = default(Point);
-                ellipseGeometry.RadiusX = 0;
-                ellipseGeometry.RadiusY = 0;
+                ellipse.Center = default(Point);
+                ellipse.RadiusX = 0;
+                ellipse.RadiusY = 0;
                 return;
             }
 
-            ellipseGeometry.Center = center;
-            ellipseGeometry.RadiusX = radiusX;
-            ellipseGeometry.RadiusY = radiusY;
+            Point center = new Point((leftTop.X + rightBottom.X) / 2, (leftTop.Y + rightBottom.Y) / 2);
+            double radiusX = Math.Abs(leftTop.X - center.X);
+            double radiusY = Math.Abs(rightBottom.Y - center.Y);
 
-            // TODO : Drawing.
-            //GeometryDrawing drawing = new GeometryDrawing();
-            //drawing.Geometry = (this.OriginGeometry as EllipseGeometry);
-            //drawing.Brush = Brushes.Red;
-        }
-
-        protected override void Alarm_Click(object sender, RoutedEventArgs e)
-        {
-            MenuItem alarmMenu = (sender as MenuItem);
-
-            if (!this.IsAlarm)
-            {
-                InputTextBox itb = new InputTextBox();
-                switch (itb.ShowDialog())
-                {
-                    case true:
-                        string[] value = itb.GetInputObjects();
-                        if (value.Length != 1)
-                        {
-                            return;
-                        }
-                        this.AlarmDistance = Convert.ToDouble(value[0]);
-                        break;
-                    default:
-                        return;
-                }
-            }
-
-            if (!this.IsAlarm)
-            {
-                alarmMenu.Header = "경고구역 해제";
-                this.IsAlarm = true;
-                this.PointLatLngs_CollectionChanged(null, null);
-            }
-            else
-            {
-                alarmMenu.Header = "경고구역 설정";
-                this.IsAlarm = false;
-            }
-
-            GMapMessage<GMapMarker> message = new GMapMessage<GMapMarker>();
-            message.Sender = Convert.ToString(this.Tag);
-            message.Receiver = "GMapControl";
-            message.Action = Action.ALARM;
-            message.Data = this;
-            message.MarkerType = this.MarkerType;
-
-            Messenger.Default.Send(message);
+            ellipse.Center = center;
+            ellipse.RadiusX = radiusX;
+            ellipse.RadiusY = radiusY;
         }
 
         /// <summary>
         /// Add two PointLatLng as Right of middle and Up of middle by ordered.
         /// </summary>
         /// <param name="addDistance"></param>
-        private (PointLatLng, PointLatLng) CalcBoundaryPointLatLngs(double addDistance)
+        private (PointLatLng, PointLatLng) CalcBoundaryPointLatLngs(double distance)
         {
             PointLatLng point1 = this.PointLatLngs[0];
             PointLatLng point2 = this.PointLatLngs[1];
 
-            // 1. calc 4 vertexies 
-            PointLatLng center = new PointLatLng((point1.Lat + point2.Lat) / 2, (point1.Lng + point2.Lng) / 2);
-            PointLatLng midUp = new PointLatLng(point1.Lat, (point1.Lng + point2.Lng) / 2);
-            PointLatLng midRight = new PointLatLng((point1.Lat + point2.Lat) / 2, point2.Lng);
+            // new left top
+            var leftTopUpValue = LatLngCommon.CalcDistanceAndBearing(point1, distance, 0.0);      // 1. origin left top to upside distance
+            var leftTopLeftValue = LatLngCommon.CalcDistanceAndBearing(point1, distance, 270.0);  // 2. origin left top to left side distance.
+            PointLatLng newLeftTop = new PointLatLng(leftTopUpValue.Item1.Lat, leftTopLeftValue.Item1.Lng);
 
-            // 2. real radius x and y as meter.
-            double realRadiusX = CalDistance(center.Lat, center.Lng, midRight.Lat, midRight.Lng);
-            double realRadiusY = CalDistance(center.Lat, center.Lng, midUp.Lat, midUp.Lng);
+            // new right bottom
+            var rightBottomDownValue = LatLngCommon.CalcDistanceAndBearing(point2, distance, 180.0);      // 1. origin right bottom to downside distance
+            var rightBottomRightValue = LatLngCommon.CalcDistanceAndBearing(point2, distance, 90.0);      // 2. origin right bottom to right side distance.
+            PointLatLng newRightBottom = new PointLatLng(rightBottomDownValue.Item1.Lat, rightBottomRightValue.Item1.Lng);
 
-            // 3. calculate up and right coordinates with each radius added distance.
-            var rightValue = this.GetLatLonBear(center, realRadiusX + addDistance, 90.0);
-            var upValue = this.GetLatLonBear(center, realRadiusY + addDistance, 0.0);
-            return (rightValue.Item1, upValue.Item1);
-            this.Points.Add(rightValue.Item1);
-            this.Points.Add(upValue.Item1);
+            return (newLeftTop, newRightBottom);
         }
 
+        // TODO
         /// <summary>
         /// default setting.
         /// </summary>
@@ -225,24 +168,6 @@ namespace vo.Gmap
             (this.Shape as Path).StrokeThickness = 1.5;
             (this.Shape as Path).Fill = Brushes.AliceBlue;
             return this.Shape;
-        }
-
-        /// <summary>
-        ///  TODO:
-        /// </summary>
-        /// <param name="point"></param>
-        /// <param name="distance"></param>
-        /// <param name="bearing"></param>
-        /// <returns></returns>
-        private (PointLatLng, double) GetLatLonBear(PointLatLng point, double distance, double bearing)
-        {
-            double newLatitute;
-            double newLongitude;
-            double newBearing;
-
-            this.GetCalcPoint(point.Lat, point.Lng, bearing, distance, out newLatitute, out newLongitude, out newBearing);
-
-            return (new PointLatLng(newLatitute, newLongitude), newBearing);
         }
     }
 }

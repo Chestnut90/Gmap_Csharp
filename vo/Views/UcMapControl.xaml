@@ -8,7 +8,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <gmaps:GMapControl Loaded="GMapControl_Loaded" Name="gMapControl" MouseLeftButtonDown="GMapControl_MouseLeftButtonDown" MouseRightButtonDown="GMapControl_MouseRightButtonDown" MouseMove="GMapControl_MouseMove">
+        <gmaps:GMapControl Loaded="GMapControl_Loaded" Name="gMapControl" MouseLeftButtonDown="GMapControl_MouseLeftButtonDown" MouseRightButtonDown="GMapControl_MouseRightButtonDown" MouseMove="GMapControl_MouseMove" MouseWheel="GMapControl_MouseWheel">
             <gmaps:GMapControl.ContextMenu>
                 <ContextMenu Name="popup" IsEnabled="True">
                     <MenuItem Header="방호시스템" Name="MenuDefenseSystem" Click="MenuDefenseSystem_Click"/>
@@ -24,5 +24,6 @@
                 </ContextMenu>
             </gmaps:GMapControl.ContextMenu>
         </gmaps:GMapControl>
+        <TextBlock Name="TextBlockLatLng" TextWrapping="Wrap" Text="TextBlock" Height="32" Width="318" HorizontalAlignment="Right" VerticalAlignment="Top"/>
     </Grid>
 </UserControl>

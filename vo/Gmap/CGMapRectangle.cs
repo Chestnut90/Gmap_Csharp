@@ -11,61 +11,22 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using vo.Gmap.Common;
 using vo.Views;
 
 namespace vo.Gmap
 {
     class CGMapRectangle : CGMapMarker
     {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <param name="tag"></param>
+        /// <param name="zIndex"></param>
         public CGMapRectangle(PointLatLng pos, string tag, int zIndex) : base(pos, tag, zIndex)
         {
             this.MarkerType = MarkerType.RECTANGE;
-            this.PointLatLngs = new ObservableCollection<PointLatLng>() { pos, pos };// GMapControl에서 shape null 방지.
-            this.PointLatLngs.CollectionChanged += PointLatLngs_CollectionChanged;
-        }
-
-        protected override void Alarm_Click(object sender, RoutedEventArgs e)
-        {
-            MenuItem alarmMenu = (sender as MenuItem);
-
-            if (!this.IsAlarm)
-            {
-                InputTextBox itb = new InputTextBox();
-                switch (itb.ShowDialog())
-                {
-                    case true:
-                        string[] value = itb.GetInputObjects();
-                        if (value.Length != 1)
-                        {
-                            return;
-                        }
-                        this.AlarmDistance = Convert.ToDouble(value[0]);
-                        break;
-                    default:
-                        return;
-                }
-            }
-
-            if (!this.IsAlarm)
-            {
-                alarmMenu.Header = "경고구역 해제";
-                this.IsAlarm = true;
-                this.PointLatLngs_CollectionChanged(null, null);
-            }
-            else
-            {
-                alarmMenu.Header = "경고구역 설정";
-                this.IsAlarm = false;
-            }
-
-            GMapMessage<GMapMarker> message = new GMapMessage<GMapMarker>();
-            message.Sender = Convert.ToString(this.Tag);
-            message.Receiver = "GMapControl";
-            message.Action = Action.ALARM;
-            message.Data = this;
-            message.MarkerType = this.MarkerType;
-
-            Messenger.Default.Send(message);
         }
 
         /// <summary>
@@ -73,7 +34,7 @@ namespace vo.Gmap
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void PointLatLngs_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        protected override void PointLatLngs_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             int count = this.PointLatLngs.Count;
 
@@ -112,6 +73,12 @@ namespace vo.Gmap
             this.PointLatLngs[1] = point;
         }
 
+        /// <summary>
+        /// Drawing function from IShapable
+        /// </summary>
+        /// <param name="localPath"></param>
+        /// <param name="addBlurEffect"></param>
+        /// <returns></returns>
         public override Path CreatePath(List<Point> localPath, bool addBlurEffect)
         {
             Path shape = (this.Shape as Path);
@@ -134,9 +101,70 @@ namespace vo.Gmap
             return shape;
         }
 
+        /// <summary>
+        /// Draw Rectangle
+        /// </summary>
+        /// <param name="rectangleGeometry"></param>
+        /// <param name="leftTop"></param>
+        /// <param name="rightBottom"></param>
         private void DrawRectangle(RectangleGeometry rectangleGeometry, Point leftTop, Point rightBottom)
         {
+            //GeometryDrawing gd = new GeometryDrawing();
+            //gd.Brush = this.tiling();
+            //gd.Geometry = rectangleGeometry;
+
+            //DrawingGroup
             rectangleGeometry.Rect = new Rect(leftTop, rightBottom);
+        }
+
+        private DrawingBrush tiling()
+        {
+
+            //
+            // Create a Drawing. This will be the DrawingBrushes' content.
+            //
+            PolyLineSegment polyLineSegmetn = new PolyLineSegment();
+            polyLineSegmetn.Points.Add(new Point(0, 0));
+            polyLineSegmetn.Points.Add(new Point(5, 5));
+            polyLineSegmetn.Points.Add(new Point(5, 0));
+            polyLineSegmetn.Points.Add(new Point(0, 5));
+
+            PathFigure triangleFigure = new PathFigure();
+            triangleFigure.IsClosed = false;
+            triangleFigure.StartPoint = new Point(0, 0);
+            triangleFigure.Segments.Add(polyLineSegmetn);
+
+            PathGeometry triangleGeometry = new PathGeometry();
+            triangleGeometry.Figures.Add(triangleFigure);
+
+            GeometryDrawing triangleDrawing = new GeometryDrawing();
+            triangleDrawing.Geometry = triangleGeometry;
+            //triangleDrawing.Brush = new SolidColorBrush(Color.FromArgb(255, 204, 204, 255));
+
+            Pen trianglePen = new Pen(Brushes.Black, 0.5);
+            triangleDrawing.Pen = trianglePen;
+            trianglePen.MiterLimit = 0;
+            //triangleDrawing.Freeze();
+
+            //
+            // Create another TileBrush, this time with tiling.
+            //
+            DrawingBrush tileBrushWithTiling = new DrawingBrush();
+            tileBrushWithTiling.Drawing = triangleDrawing;
+            tileBrushWithTiling.TileMode = TileMode.Tile;
+
+            // Specify the brush's Viewport. Otherwise,
+            // a single tile will be produced that fills
+            // the entire output area and its TileMode will
+            // have no effect.
+            // This setting uses realtive values to
+            // creates four tiles.
+            tileBrushWithTiling.Viewport = new Rect(0, 0, 5, 5);
+            tileBrushWithTiling.ViewportUnits = BrushMappingMode.Absolute;
+
+            return tileBrushWithTiling;
+            //tilingExampleRectangle.Fill = tileBrushWithTiling;
+            
         }
 
         protected override UIElement SetShape()
@@ -152,55 +180,33 @@ namespace vo.Gmap
             (this.Shape as Path).Data = this.GeometryGroup;
             (this.Shape as Path).Stroke = Brushes.Red;
             (this.Shape as Path).StrokeThickness = 1.5;
-            (this.Shape as Path).Fill = Brushes.AliceBlue;
+            //(this.Shape as Path).Fill = Brushes.AliceBlue;
+            (this.Shape as Path).Fill = this.tiling();
             return this.Shape;
         }
 
+        // TODO : Point swap
         /// <summary>
-        /// Add two PointLatLng as left top and right bottom by ordered.
+        ///  Calculate boundary point left top and right bottom
         /// </summary>
-        /// <param name="addDistance"></param>
-        private (PointLatLng, PointLatLng) CalcBoundaryPointLatLngs(double addDistance)
+        /// <param name="distance"></param>
+        /// <returns></returns>
+        private (PointLatLng, PointLatLng) CalcBoundaryPointLatLngs(double distance)
         {
-            // 1. find center 
             PointLatLng point1 = this.PointLatLngs[0];
             PointLatLng point2 = this.PointLatLngs[1];
-            PointLatLng center = new PointLatLng((point1.Lat + point2.Lat) / 2, (point1.Lng + point2.Lng) / 2);
 
-            // 2. find middle up and middle right side.
-            PointLatLng midUp = new PointLatLng(point1.Lat, (point1.Lng + point2.Lng) / 2);
-            PointLatLng midRight = new PointLatLng((point1.Lat + point2.Lat) / 2, point2.Lng);
+            // new left top
+            var leftTopUpValue = LatLngCommon.CalcDistanceAndBearing(point1, distance, 0.0);      // 1. origin left top to upside distance
+            var leftTopLeftValue = LatLngCommon.CalcDistanceAndBearing(point1, distance, 270.0);  // 2. origin left top to left side distance.
+            PointLatLng newLeftTop = new PointLatLng(leftTopUpValue.Item1.Lat, leftTopLeftValue.Item1.Lng);
 
-            // 3. find angle with top
-            double topDistanceX = this.CalDistance(center.Lat, center.Lng, midUp.Lat, midUp.Lng);
-            double topDistanceY = this.CalDistance(point1.Lat, point1.Lng, midUp.Lat, midUp.Lng);
-            double topAngle = Math.Atan2(topDistanceY, topDistanceX) * 180 / Math.PI;
-            double topDistanceS = Math.Sqrt(Math.Pow(topDistanceY, 2) + Math.Pow(topDistanceX, 2));
-            double leftTopDistance = topDistanceS * (addDistance + topDistanceY) / topDistanceY;
+            // new right bottom
+            var rightBottomDownValue = LatLngCommon.CalcDistanceAndBearing(point2, distance, 180.0);      // 1. origin right bottom to downside distance
+            var rightBottomRightValue = LatLngCommon.CalcDistanceAndBearing(point2, distance, 90.0);      // 2. origin right bottom to right side distance.
+            PointLatLng newRightBottom = new PointLatLng(rightBottomDownValue.Item1.Lat, rightBottomRightValue.Item1.Lng);
 
-            double bottomDistanceX = this.CalDistance(center.Lat, center.Lng, midRight.Lat, midRight.Lng);
-            double bottomDistanceY = this.CalDistance(point2.Lat, point2.Lng, midRight.Lat, midRight.Lng);
-            double bottomAngle = Math.Atan2(bottomDistanceY, bottomDistanceX) * 180 / Math.PI;
-            double bottomDistanceS = Math.Sqrt(Math.Pow(bottomDistanceX, 2) + Math.Pow(bottomDistanceY, 2));
-            double rightBottomDistance = bottomDistanceS * (bottomDistanceX + addDistance) / bottomDistanceX;
-
-            // 4. find boundary rectangle left top and right bottom.
-            var leftTop = GetLatLonBear(center, leftTopDistance, 360 - topAngle);
-            var rightBottom = GetLatLonBear(center, rightBottomDistance, 90 + bottomAngle);
-
-            return (leftTop.Item1, rightBottom.Item1);
-        }
-
-        // TODO : below.
-        private (PointLatLng, double) GetLatLonBear(PointLatLng point, double distance, double bearing)
-        {
-            double newLatitute;
-            double newLongitude;
-            double newBearing;
-
-            this.GetCalcPoint(point.Lat, point.Lng, bearing, distance, out newLatitute, out newLongitude, out newBearing);
-
-            return (new PointLatLng(newLatitute, newLongitude), newBearing);
+            return (newLeftTop, newRightBottom);
         }
     }
 }

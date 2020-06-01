@@ -17,6 +17,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using vo.Gmap;
+using vo.Gmap.Common;
 
 namespace vo.Views
 {
@@ -195,18 +196,25 @@ namespace vo.Views
 
         private void GMapControl_MouseMove(object sender, MouseEventArgs e)
         {
+            var localPoint = e.GetPosition(this);
+            PointLatLng pointLatLng = this.gMapControl.FromLocalToLatLng((int)localPoint.X, (int)localPoint.Y);
+            double width = Math.Abs(localPoint.X - start.X);
+            double height = Math.Abs(localPoint.Y - start.Y);
+
+            this.TextBlockLatLng.Text = $"{pointLatLng.Lat}, {pointLatLng.Lng}, " +
+                                        $"{this.gMapControl.Zoom}, {this.gMapControl.ZoomX}, {this.gMapControl.ZoomY}";
+
+
             if (this.drawState.Equals(DrawState.None))
             {
+                this.gMapControl.CanDragMap = true;
                 return;
             }
 
+            this.gMapControl.CanDragMap = false;
+
             if (isDrawing)
             {
-                var localPoint = e.GetPosition(this);
-                PointLatLng pointLatLng = this.gMapControl.FromLocalToLatLng((int)localPoint.X, (int)localPoint.Y);
-                double width = Math.Abs(localPoint.X - start.X);
-                double height = Math.Abs(localPoint.Y - start.Y);
-
                 switch (drawState)
                 {
                     case DrawState.Ellipse:
@@ -217,6 +225,7 @@ namespace vo.Views
                         (drawingObject as CGMapRectangle).SetNextPoint(pointLatLng);
                         break;
                     case DrawState.Polygon:
+                        //(drawingObject as CGMapPolygon).SetNextPoint(pointLatLng);
                         // None.
                         break;
                     case DrawState.Triangle:
@@ -273,7 +282,7 @@ namespace vo.Views
                         this.gMapControl.Markers.Add(drawingObject);
                         return;
                     }
-                    //(drawingObject as CGMapPolygon).Point2 = pointLatLng;
+                    (drawingObject as CGMapPolygon).SetNextPoint(pointLatLng);
                     //(drawingObject as CGMapPolygon).SetShape(pointLatLng);
                     break;
                 case DrawState.Triangle:
@@ -312,13 +321,13 @@ namespace vo.Views
 
             switch (param.Action)
             {
-                case Gmap.Action.MODIFICATION:
+                case Gmap.Common.Action.MODIFICATION:
                     this.GMapMarker_Modification(param.Data, param.MarkerType);
                     break;
-                case Gmap.Action.DELETE:
+                case Gmap.Common.Action.DELETE:
                     // TODO : delete marker.
                     break;
-                case Gmap.Action.ALARM:
+                case Gmap.Common.Action.ALARM:
 
                     this.GMapMarker_AlarmSetting(param.Data, param.MarkerType);
 
@@ -340,6 +349,9 @@ namespace vo.Views
                     break;
                 case MarkerType.TRIANGLE:
                     this.drawingObject = (marker as CGMapTriangle);
+                    break;
+                case MarkerType.POLYGON:
+                    this.drawingObject = (marker as CGMapPolygon);
                     break;
                 default:
                     return;
@@ -400,6 +412,19 @@ namespace vo.Views
 
         private void MenuJamming_Click(object sender, RoutedEventArgs e)
         {
+
+        }
+
+        private void GMapControl_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            var localPoint = e.GetPosition(this);
+            PointLatLng pointLatLng = this.gMapControl.FromLocalToLatLng((int)localPoint.X, (int)localPoint.Y);
+            double width = Math.Abs(localPoint.X - start.X);
+            double height = Math.Abs(localPoint.Y - start.Y);
+
+            this.TextBlockLatLng.Text = $"{pointLatLng.Lat}, {pointLatLng.Lng}, " +
+                                        $"{this.gMapControl.Zoom}, {this.gMapControl.ZoomX}, {this.gMapControl.ZoomY}";
+
 
         }
     }
