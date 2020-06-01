@@ -1,0 +1,17 @@
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+
+# Visual studio 2019 cache/options directory
+.vs/
+
+# Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
