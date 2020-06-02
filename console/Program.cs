@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -34,20 +35,11 @@ namespace console
 
         static void Main(string[] args)
         {
-            var matrix_a = Matrix<double>.Build.DenseOfArray(new double[2, 1] { { 1.0}, { 4.0 } });
+            string nitFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.ini");
 
-            Debug.WriteLine(matrix_a.ToMatrixString());
+            IniReading reader = new IniReading();
+            reader.GetAll(nitFileName);
 
-            //PointLatLng top = new PointLatLng(10, 10);
-            //PointLatLng lb = new PointLatLng(0, 0);
-            //PointLatLng rb = new PointLatLng(0, 20);
-
-            //var calc = Calc.CalcCenterCircle(top, lb, rb);
-            //Debug.WriteLine(calc);
-
-            PointLatLng lt = new PointLatLng(10, 0);
-            PointLatLng rb = new PointLatLng(0, 20);
-            Calc.CalcTwo(lt, rb, 10);
         }
 
         public class Calc
