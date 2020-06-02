@@ -77,7 +77,7 @@ namespace vo.Gmap
         {
             PointLatLng point1 = this.PointLatLngs[0];
             PointLatLng point2 = this.PointLatLngs[1];
-            return LatLngCommon.CalcOuterRectangle(point1, point2, addDistance);
+            return LatLngCommon.CalcOuterRectangleWithInnerCircle(point1, point2, addDistance);
         }
 
         public override Path CreatePath(List<Point> localPath, bool addBlurEffect)
@@ -149,7 +149,7 @@ namespace vo.Gmap
             (this.Shape as Path).Data = this.GeometryGroup;
             (this.Shape as Path).Stroke = Brushes.Red;
             (this.Shape as Path).StrokeThickness = 1.5;
-            (this.Shape as Path).Fill = Brushes.AliceBlue;
+            (this.Shape as Path).Fill = this.tiling();
             return this.Shape;
         }
 

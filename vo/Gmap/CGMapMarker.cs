@@ -209,14 +209,14 @@ namespace vo.Gmap
                 this.IsAlarm = true;
 
                 // invoke collection changed event to make boundary points and add points.
-                this.PointLatLngs_CollectionChanged(null, null);
+                //this.PointLatLngs_CollectionChanged(null, null);
             }
             else
             {
                 alarmMenu.Header = "경고구역 설정";
                 this.IsAlarm = false;
             }
-
+            this.PointLatLngs_CollectionChanged(null, null);
             GMapMessage<GMapMarker> message = new GMapMessage<GMapMarker>();
             message.Sender = Convert.ToString(this.Tag);
             message.Receiver = "GMapControl";
@@ -249,7 +249,7 @@ namespace vo.Gmap
         #endregion
 
         #region Implementation Ishapable 
-        public List<PointLatLng> Points
+        public virtual List<PointLatLng> Points
         {
             get => this.PointLatLngs.ToList();
             set { throw new NotImplementedException("Use PointLatlngs property instead this. this property used for only get."); }
@@ -261,19 +261,57 @@ namespace vo.Gmap
         }
         #endregion
 
-        // TODO : below
-
-        /// <summary>
-        /// calculate center point using input two points.
-        /// </summary>
-        /// <param name="point1"></param>
-        /// <param name="point2"></param>
-        /// <returns></returns>
-        protected Point CalcCenterPoint(Point point1, Point point2)
+        #region tiling
+        protected DrawingBrush tiling()
         {
-            return new Point((point1.X + point2.X) / 2, (point2.Y + point2.Y) / 2);
-        }
 
+            //
+            // Create a Drawing. This will be the DrawingBrushes' content.
+            //
+            PolyLineSegment polyLineSegmetn = new PolyLineSegment();
+            polyLineSegmetn.Points.Add(new Point(0, 0));
+            polyLineSegmetn.Points.Add(new Point(5, 5));
+            polyLineSegmetn.Points.Add(new Point(5, 0));
+            polyLineSegmetn.Points.Add(new Point(0, 5));
+
+            PathFigure triangleFigure = new PathFigure();
+            triangleFigure.IsClosed = false;
+            triangleFigure.StartPoint = new Point(0, 0);
+            triangleFigure.Segments.Add(polyLineSegmetn);
+
+            PathGeometry triangleGeometry = new PathGeometry();
+            triangleGeometry.Figures.Add(triangleFigure);
+
+            GeometryDrawing triangleDrawing = new GeometryDrawing();
+            triangleDrawing.Geometry = triangleGeometry;
+            //triangleDrawing.Brush = new SolidColorBrush(Color.FromArgb(255, 204, 204, 255));
+
+            Pen trianglePen = new Pen(Brushes.Black, 0.5);
+            triangleDrawing.Pen = trianglePen;
+            trianglePen.MiterLimit = 0;
+            //triangleDrawing.Freeze();
+
+            //
+            // Create another TileBrush, this time with tiling.
+            //
+            DrawingBrush tileBrushWithTiling = new DrawingBrush();
+            tileBrushWithTiling.Drawing = triangleDrawing;
+            tileBrushWithTiling.TileMode = TileMode.Tile;
+
+            // Specify the brush's Viewport. Otherwise,
+            // a single tile will be produced that fills
+            // the entire output area and its TileMode will
+            // have no effect.
+            // This setting uses realtive values to
+            // creates four tiles.
+            tileBrushWithTiling.Viewport = new Rect(0, 0, 5, 5);
+            tileBrushWithTiling.ViewportUnits = BrushMappingMode.Absolute;
+
+            return tileBrushWithTiling;
+            //tilingExampleRectangle.Fill = tileBrushWithTiling;
+
+        }
+        #endregion
 
     }
 }

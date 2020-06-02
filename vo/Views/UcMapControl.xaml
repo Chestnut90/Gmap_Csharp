@@ -19,7 +19,6 @@
                         <MenuItem Header="사각형" Name="MenuRectangle" Click="Draw_Clicks" />
                         <MenuItem Header="삼각형" Name="MenuTriangle" Click="Draw_Clicks"/>
                     </MenuItem>
-                    <MenuItem Header="경고구역" Name="MenuAlaramArea" Click="MenuAlaramArea_Click"/>
                     <MenuItem Header="재밍 방사 영역" Name="MenuJamming" Click="MenuJamming_Click"/>
                 </ContextMenu>
             </gmaps:GMapControl.ContextMenu>

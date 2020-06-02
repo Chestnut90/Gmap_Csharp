@@ -166,7 +166,7 @@ namespace vo.Gmap
             (this.Shape as Path).Data = GeometryGroup;
             (this.Shape as Path).Stroke = Brushes.Red;
             (this.Shape as Path).StrokeThickness = 1.5;
-            (this.Shape as Path).Fill = Brushes.AliceBlue;
+            (this.Shape as Path).Fill = this.tiling();
             return this.Shape;
         }
     }

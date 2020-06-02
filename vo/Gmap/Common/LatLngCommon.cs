@@ -42,18 +42,65 @@ namespace vo.Gmap.Common
         }
 
         /// <summary>
-        /// Calculate bearing of two points.
+        /// Calculate bearing between two points
         /// </summary>
         /// <param name="point1"></param>
         /// <param name="point2"></param>
         /// <returns></returns>
         public static double CalcBearing(PointLatLng point1, PointLatLng point2)
         {
-            return CalcBearing(point1.Lat, point2.Lat, point1.Lng, point2.Lng);
+            // 현재 위치 : 위도나 경도는 지구 중심을 기반으로 하는 각도이기 때문에 라디안 각도로 변환한다.
+            double Cur_Lat_radian = point1.Lat * (Math.PI / 180.0);
+            double Cur_Lon_radian = point1.Lng * (Math.PI / 180.0);
+
+            // 목표 위치 : 위도나 경도는 지구 중심을 기반으로 하는 각도이기 때문에 라디안 각도로 변환한다.
+            double Dest_Lat_radian = point2.Lat * (Math.PI / 180.0);
+            double Dest_Lon_radian = point2.Lng * (Math.PI / 180.0);
+
+            // radian distance
+            double radian_distance = Math.Acos(
+                Math.Sin(Cur_Lat_radian) * Math.Sin(Dest_Lat_radian) + 
+                Math.Cos(Cur_Lat_radian) * Math.Cos(Dest_Lat_radian) * Math.Cos(Cur_Lon_radian - Dest_Lon_radian));
+
+            // 목적지 이동 방향을 구한다.(현재 좌표에서 다음 좌표로 이동하기 위해서는 방향을 설정해야 한다. 라디안값이다.
+            double radian_bearing = Math.Acos(
+                (Math.Sin(Dest_Lat_radian) - Math.Sin(Cur_Lat_radian) * Math.Cos(radian_distance)) / 
+                (Math.Cos(Cur_Lat_radian) * Math.Sin(radian_distance)));       
+            // acos의 인수로 주어지는 x는 360분법의 각도가 아닌 radian(호도)값이다.       
+            double true_bearing = 0;
+            if (Math.Sin(Dest_Lon_radian - Cur_Lon_radian) < 0)
+            {
+                true_bearing = radian_bearing * (180.0 / Math.PI);
+                true_bearing = 360.0 - true_bearing;
+            }
+            else
+            {
+                true_bearing = radian_bearing * (180.0 / Math.PI);
+            }
+
+            return /*(short)*/true_bearing;
         }
 
+        /// <summary>
+        /// Calculate bearing of two points.
+        /// </summary>
+        /// <param name="point1"></param>
+        /// <param name="point2"></param>
+        /// <returns></returns>
+        public static double CalcBearing_test_(PointLatLng point1, PointLatLng point2)
+        {
+            double delta_lng = point2.Lng - point1.Lng;
+
+            double y = Math.Sin(delta_lng) * Math.Cos(point2.Lat);
+            double x = Math.Cos(point1.Lat) * Math.Sin(point2.Lat) - Math.Sin(point1.Lat) * Math.Cos(point2.Lat) * Math.Cos(delta_lng);
+            double theta = Math.Atan2(y, x);
+            return (theta * 180.0 / Math.PI + 360) % 360;
+            //return theta * 180.0 / Math.PI;
+            //return CalcBearing(point1.Lat, point2.Lat, point1.Lng, point2.Lng);
+        }
         #endregion
 
+        #region boundary for triangle
         /// <summary>
         /// Find center point of inner circle with triangle.
         /// </summary>
@@ -124,7 +171,62 @@ namespace vo.Gmap.Common
             return new PointLatLng(matrixResult.At(1, 0), matrixResult.At(0, 0));
         }
 
-        public static (PointLatLng, PointLatLng) CalcFind(PointLatLng leftTop, PointLatLng rightBottom, double distance)
+        private static (PointLatLng, double) CalcVertexWithCenter(PointLatLng center, PointLatLng top, PointLatLng leftBottom, PointLatLng rightBottom, double distance)
+        {
+            //double dis_IA = Math.Sqrt(Math.Pow(center.Lat - top.Lat, 2) + Math.Pow(center.Lng - top.Lng, 2));
+            double real_dis_IA = CalcDistance(center, top);
+            var vector_AC = Vector<double>.Build.DenseOfArray(new double[] { (rightBottom.Lng - top.Lng), (rightBottom.Lat - top.Lat) });
+            var vector_AB = Vector<double>.Build.DenseOfArray(new double[] { (leftBottom.Lng - top.Lng), (leftBottom.Lat - top.Lat) });
+            double dot_product1 = vector_AB.DotProduct(vector_AC);
+            double dis_AC = Math.Sqrt(Math.Pow(vector_AC.At(0), 2) + Math.Pow(vector_AC.At(1), 2));
+            double dis_AB = Math.Sqrt(Math.Pow(vector_AB.At(0), 2) + Math.Pow(vector_AB.At(1), 2));
+            double angle_A = Math.Acos(dot_product1 / (dis_AB * dis_AC));// * 180.0 / Math.PI;
+            //double innerRadius = Math.Sin(angle_A / 2) * dis_IA;
+            double real_innerRadius = Math.Sin(angle_A / 2) * real_dis_IA;
+            //double dis_ItoNewTop = dis_IA * (innerRadius + distance) / innerRadius;
+            double real_dis_ItoNewTop = real_dis_IA * (real_innerRadius + distance) / real_innerRadius;
+            //double bearing_IA = CalcBearing(I.Lat, A.Lat, I.Lng, A.Lng);// TODO;
+            //double bearing_IA = CalcBearing2(I, A); // degree
+            double bearing_IA = CalcBearing(center, top);
+            return CalcDistanceAndBearing(center, real_dis_ItoNewTop, bearing_IA);
+        }
+
+        public static (PointLatLng, PointLatLng) CalcOuterRectangleWithInnerCircle(PointLatLng leftTop, PointLatLng rightBottom, double distance)
+        {
+            // top - A
+            // left bottom - B
+            // right bottom - C
+
+            // 1. get vertexies.
+            PointLatLng A = new PointLatLng(leftTop.Lat, (leftTop.Lng + rightBottom.Lng) / 2);
+            PointLatLng B = new PointLatLng(rightBottom.Lat, leftTop.Lng);
+            PointLatLng C = rightBottom;
+
+            // 2. get center.
+            PointLatLng I = CalcCenterInnerCircle(A, B, C);
+
+            // Debug
+            Debug.WriteLine($"Top : {A.Lat}, {A.Lng}");
+            Debug.WriteLine($"Left bottom : {B.Lat}, {B.Lng}");
+            Debug.WriteLine($"Right bottom : {C.Lat}, {C.Lng}");
+            Debug.WriteLine($"inner center : {I.Lat}, {I.Lng}");
+
+
+            var newTop = CalcVertexWithCenter(I, A, B, C, distance);
+            var newRightBottom = CalcVertexWithCenter(I, C, A, B, distance);
+
+            double left_lng = 2 * newTop.Item1.Lng - newRightBottom.Item1.Lng;
+            PointLatLng newLeftTop = new PointLatLng(newTop.Item1.Lat, left_lng);
+
+            // Debug.
+            Debug.WriteLine($"New Top : {newTop.Item1.Lat}, {newTop.Item1.Lng}");
+            Debug.WriteLine($"New Right Bottom : {newRightBottom.Item1.Lat}, {newRightBottom.Item1.Lng}");
+            Debug.WriteLine($"New Left Bottom : {newLeftTop.Lat}, {newLeftTop.Lng}");
+            return (newLeftTop, newRightBottom.Item1);
+        }
+
+        // TODO
+        public static (PointLatLng, PointLatLng) CalcOuterRectangleWithInnerCircle2(PointLatLng leftTop, PointLatLng rightBottom, double distance)
         {
             // top - A
             // left bottom - B
@@ -147,6 +249,7 @@ namespace vo.Gmap.Common
             // 3. new top
             //double dis_IA = CalcDistance(I, A); // 중심과 Top의 길이.
             double dis_IA = Math.Sqrt(Math.Pow(I.Lat - A.Lat, 2) + Math.Pow(I.Lng - A.Lng, 2));
+            double real_dis_IA = CalcDistance(I, A);
             var vector_AC = Vector<double>.Build.DenseOfArray(new double[] { (C.Lng - A.Lng), (C.Lat - A.Lat) });
             var vector_AB = Vector<double>.Build.DenseOfArray(new double[] { (B.Lng - A.Lng), (B.Lat - A.Lat) });
             double dot_product1 = vector_AB.DotProduct(vector_AC);
@@ -154,14 +257,19 @@ namespace vo.Gmap.Common
             double dis_AB = Math.Sqrt(Math.Pow(vector_AB.At(0), 2) + Math.Pow(vector_AB.At(1), 2));
             double angle_A = Math.Acos(dot_product1 / (dis_AB * dis_AC));// * 180.0 / Math.PI;
             double innerRadius = Math.Sin(angle_A / 2) * dis_IA;
+            double real_innerRadius = Math.Sin(angle_A / 2) * real_dis_IA;
             double dis_ItoNewTop = dis_IA * (innerRadius + distance) / innerRadius;
-            double bearing_IA = CalcBearing(I.Lat, A.Lat, I.Lng, A.Lng);
-            var newTop = CalcDistanceAndBearing(I, dis_ItoNewTop, bearing_IA);
+            double real_dis_ItoNewTop = real_dis_IA * (real_innerRadius + distance) / real_innerRadius;
+            //double bearing_IA = CalcBearing(I.Lat, A.Lat, I.Lng, A.Lng);// TODO;
+            //double bearing_IA = CalcBearing2(I, A); // degree
+            double bearing_IA = CalcBearing(I, A);
+            var newTop = CalcDistanceAndBearing(I, real_dis_ItoNewTop, bearing_IA);
 
 
             // 4. new right Bottom
             //double dis_IC = CalcDistance(I, C);
             double dis_IC = Math.Sqrt(Math.Pow(I.Lat - C.Lat, 2) + Math.Pow(I.Lng - C.Lng, 2));
+            double real_dis_IC = CalcDistance(I, C);
             var vector_CA = Vector<double>.Build.DenseOfArray(new double[] { (A.Lng - C.Lng), (A.Lat - C.Lat) });
             var vector_CB = Vector<double>.Build.DenseOfArray(new double[] { (B.Lng - C.Lng), (B.Lat - C.Lat) });
             double dot_product2 = vector_CA.DotProduct(vector_CB);
@@ -170,8 +278,22 @@ namespace vo.Gmap.Common
             double angle_C = Math.Acos(dot_product2 / (dis_CA * dis_CB));// * 180.0 / Math.PI;
             double innerRaidus2 = Math.Sin(angle_C / 2) * dis_IC;// check
             double dis_ItoNewRightBottom = dis_IC * (innerRadius + distance) / innerRadius;
-            double bearing_IC = CalcBearing(I.Lat, C.Lat, I.Lng, C.Lng);
-            var newRightBottom = CalcDistanceAndBearing(I, dis_ItoNewRightBottom, bearing_IC);
+            double real_dis_ItoNewRightBottom = real_dis_IC * (real_innerRadius + distance) / real_innerRadius;
+            double bearing_ttt = CalcBearing(I, C);
+
+            // dot product
+            var vector_IA = Vector<double>.Build.DenseOfArray(new double[]
+            {
+                (A.Lng - I.Lng), (A.Lat - I.Lat)
+            });
+            var vector_IC = Vector<double>.Build.DenseOfArray(new double[]
+            {
+                (C.Lng - I.Lng), (C.Lat - I.Lat)
+            });
+            double dot = vector_IA.DotProduct(vector_IC);
+            double theta = Math.Acos(dot / (dis_IA * dis_IC)) * 180.0 / Math.PI;
+
+            var newRightBottom = CalcDistanceAndBearing(I, real_dis_ItoNewRightBottom, bearing_ttt);
 
             double left_lng = 2 * newTop.Item1.Lng - newRightBottom.Item1.Lng;
             PointLatLng newLeftTop = new PointLatLng(newTop.Item1.Lat, left_lng);
@@ -182,7 +304,8 @@ namespace vo.Gmap.Common
             Debug.WriteLine($"New Left top : {newLeftTop.Lat}, {newLeftTop.Lng}");
             return (newLeftTop, newRightBottom.Item1);
         }
-        
+
+        // TODO
         public static (PointLatLng, PointLatLng) CalcOuterRectangle(PointLatLng leftTop, PointLatLng rightBottom, double distance)
         {
             // 1. find triangle points - top / leftbottom / rightbottom
@@ -226,44 +349,38 @@ namespace vo.Gmap.Common
 
             return (newLeftTop, newRightBottom);
         }
+        
+        #endregion
 
-        public static (PointLatLng, PointLatLng) CalcTwo(PointLatLng leftTop, PointLatLng rightBottom, double distance)
+        #region boundary for polygon
+        
+        public static List<PointLatLng> CalcBoundaryPointsAsPolygon(List<PointLatLng> origin, double distance)
         {
-            // 1. get vertexies.
-            PointLatLng top = new PointLatLng(leftTop.Lat, (leftTop.Lng + rightBottom.Lng) / 2);
-            PointLatLng leftBottom = new PointLatLng(rightBottom.Lat, leftTop.Lng);
+            List<PointLatLng> list = new List<PointLatLng>();
 
-            // 2. get center.
-            //PointLatLng center = CalcCenterCircle(top, leftBottom, rightBottom);
-            PointLatLng center = CalcCenterInnerCircle(top, leftBottom, rightBottom);
+            // weight lat and lng
 
-            // 3. calc middle points and distances.
-            PointLatLng leftMid = new PointLatLng((top.Lat + leftBottom.Lat) / 2, (top.Lng + leftBottom.Lng) / 2);
-            PointLatLng rightMid = new PointLatLng((top.Lat + rightBottom.Lat) / 2, (top.Lng + rightBottom.Lng) / 2);
+            double weight_lat = origin.Average(point => point.Lat);
+            double weight_lng = origin.Average(point => point.Lng);
 
-            //double leftDistanceCenter = CalcRealDistanceFromCenter(center, leftMid);
-            //double rightDistanceCenter = CalcRealDistanceFromCenter(center, rightMid);
+            PointLatLng weight_point = new PointLatLng(weight_lat, weight_lng);
+            Debug.WriteLine($"Weight : {weight_lat}, {weight_lng}");
 
-            //// 4. distance : center to top
-            //double disCenterToTop = CalcRealDistanceFromCenter(center, top);
-            //double disCenterToRightBottom = CalcRealDistanceFromCenter(center, rightBottom);
+            foreach(var point in origin)
+            {
+                double bearing = CalcBearing(weight_point, point);
+                double real_distance = CalcDistance(weight_point, point);
+                var result = CalcDistanceAndBearing(weight_point, real_distance + distance, bearing);
+                list.Add(result.Item1);
 
-            //// 5. distance new Radius and 
-            //double newRadius = (leftDistanceCenter + distance) * disCenterToTop / leftDistanceCenter;
-            ////double r = (rightDistanceCenter + distance) * disCenterToRightBottom / rightDistanceCenter; // same with radius
+                Debug.WriteLine($"Point1 : {point.Lat}, {point.Lng} to {result.Item1.Lat}, {result.Item1.Lng}, and bearing : {bearing}");
 
-            //// 6. larger top and right bottom
-            //double leftAngle = Math.Acos(rightDistanceCenter / disCenterToTop) * 180.0 / Math.PI;
-            //var largerTopValue = CalcPointLatLngBearing(center, 0.0, newRadius);
-            //var largerBottomValue = CalcPointLatLngBearing(center, leftAngle * 2, newRadius);
+            }
 
-            //PointLatLng largerTop = largerTopValue.Item1;
-            //PointLatLng largerRightBottom = largerBottomValue.Item1;
-            //PointLatLng largerLeftTop = new PointLatLng(largerTop.Lat, 2 * largerTop.Lng - largerRightBottom.Lng);
-
-            //return (largerLeftTop, largerRightBottom);
-            return (default(PointLatLng), default(PointLatLng));
+            return list;
         }
+
+        #endregion
 
         #region base
         /// <summary>
@@ -405,7 +522,7 @@ namespace vo.Gmap.Common
         }
 
         /// <summary>
-        /// 방위각 계산
+        /// 방위각 계산 from U_VHF - Error
         /// </summary>
         /// <param name="lat1"></param>
         /// <param name="lat2"></param>
@@ -420,6 +537,7 @@ namespace vo.Gmap.Common
             double bearing = (theta * 180 / Math.PI + 360) % 360;
             return bearing;
         }
+
         #endregion
     }
 }

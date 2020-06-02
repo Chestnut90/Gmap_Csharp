@@ -117,55 +117,7 @@ namespace vo.Gmap
             rectangleGeometry.Rect = new Rect(leftTop, rightBottom);
         }
 
-        private DrawingBrush tiling()
-        {
-
-            //
-            // Create a Drawing. This will be the DrawingBrushes' content.
-            //
-            PolyLineSegment polyLineSegmetn = new PolyLineSegment();
-            polyLineSegmetn.Points.Add(new Point(0, 0));
-            polyLineSegmetn.Points.Add(new Point(5, 5));
-            polyLineSegmetn.Points.Add(new Point(5, 0));
-            polyLineSegmetn.Points.Add(new Point(0, 5));
-
-            PathFigure triangleFigure = new PathFigure();
-            triangleFigure.IsClosed = false;
-            triangleFigure.StartPoint = new Point(0, 0);
-            triangleFigure.Segments.Add(polyLineSegmetn);
-
-            PathGeometry triangleGeometry = new PathGeometry();
-            triangleGeometry.Figures.Add(triangleFigure);
-
-            GeometryDrawing triangleDrawing = new GeometryDrawing();
-            triangleDrawing.Geometry = triangleGeometry;
-            //triangleDrawing.Brush = new SolidColorBrush(Color.FromArgb(255, 204, 204, 255));
-
-            Pen trianglePen = new Pen(Brushes.Black, 0.5);
-            triangleDrawing.Pen = trianglePen;
-            trianglePen.MiterLimit = 0;
-            //triangleDrawing.Freeze();
-
-            //
-            // Create another TileBrush, this time with tiling.
-            //
-            DrawingBrush tileBrushWithTiling = new DrawingBrush();
-            tileBrushWithTiling.Drawing = triangleDrawing;
-            tileBrushWithTiling.TileMode = TileMode.Tile;
-
-            // Specify the brush's Viewport. Otherwise,
-            // a single tile will be produced that fills
-            // the entire output area and its TileMode will
-            // have no effect.
-            // This setting uses realtive values to
-            // creates four tiles.
-            tileBrushWithTiling.Viewport = new Rect(0, 0, 5, 5);
-            tileBrushWithTiling.ViewportUnits = BrushMappingMode.Absolute;
-
-            return tileBrushWithTiling;
-            //tilingExampleRectangle.Fill = tileBrushWithTiling;
-            
-        }
+        
 
         protected override UIElement SetShape()
         {

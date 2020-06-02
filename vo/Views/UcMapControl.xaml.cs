@@ -257,7 +257,7 @@ namespace vo.Views
                         this.gMapControl.Markers.Add(drawingObject);
                         return;
                     }
-                    (drawingObject as CGMapEllipse).Points[1] = pointLatLng;
+                    //(drawingObject as CGMapEllipse).Points[1] = pointLatLng;
 
                     break;
                 case DrawState.Rectangle:
@@ -325,7 +325,13 @@ namespace vo.Views
                     this.GMapMarker_Modification(param.Data, param.MarkerType);
                     break;
                 case Gmap.Common.Action.DELETE:
-                    // TODO : delete marker.
+                    var deleteItem = this.gMapControl.Markers.Where(marker => marker.Tag.Equals(param.Sender)).FirstOrDefault();
+                    if (deleteItem is null)
+                    {
+                        return;
+                    }
+                    this.gMapControl.Markers.Remove(deleteItem);
+
                     break;
                 case Gmap.Common.Action.ALARM:
 
@@ -401,11 +407,6 @@ namespace vo.Views
         }
 
         private void MenuDrone_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void MenuAlaramArea_Click(object sender, RoutedEventArgs e)
         {
 
         }
