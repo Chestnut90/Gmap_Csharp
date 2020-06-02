@@ -66,6 +66,10 @@ namespace vo.Gmap.Common
             double radian_bearing = Math.Acos(
                 (Math.Sin(Dest_Lat_radian) - Math.Sin(Cur_Lat_radian) * Math.Cos(radian_distance)) / 
                 (Math.Cos(Cur_Lat_radian) * Math.Sin(radian_distance)));       
+            if (radian_bearing is double.NaN)
+            {
+                radian_bearing = 0.0;
+            }
             // acos의 인수로 주어지는 x는 360분법의 각도가 아닌 radian(호도)값이다.       
             double true_bearing = 0;
             if (Math.Sin(Dest_Lon_radian - Cur_Lon_radian) < 0)
@@ -79,24 +83,6 @@ namespace vo.Gmap.Common
             }
 
             return /*(short)*/true_bearing;
-        }
-
-        /// <summary>
-        /// Calculate bearing of two points.
-        /// </summary>
-        /// <param name="point1"></param>
-        /// <param name="point2"></param>
-        /// <returns></returns>
-        public static double CalcBearing_test_(PointLatLng point1, PointLatLng point2)
-        {
-            double delta_lng = point2.Lng - point1.Lng;
-
-            double y = Math.Sin(delta_lng) * Math.Cos(point2.Lat);
-            double x = Math.Cos(point1.Lat) * Math.Sin(point2.Lat) - Math.Sin(point1.Lat) * Math.Cos(point2.Lat) * Math.Cos(delta_lng);
-            double theta = Math.Atan2(y, x);
-            return (theta * 180.0 / Math.PI + 360) % 360;
-            //return theta * 180.0 / Math.PI;
-            //return CalcBearing(point1.Lat, point2.Lat, point1.Lng, point2.Lng);
         }
         #endregion
 
@@ -171,6 +157,16 @@ namespace vo.Gmap.Common
             return new PointLatLng(matrixResult.At(1, 0), matrixResult.At(0, 0));
         }
 
+        /// <summary>
+        /// Calculate new point from center
+        /// leftBottom - top - rightBottom 
+        /// </summary>
+        /// <param name="center"></param>
+        /// <param name="top"></param>
+        /// <param name="leftBottom"></param>
+        /// <param name="rightBottom"></param>
+        /// <param name="distance"></param>
+        /// <returns></returns>
         private static (PointLatLng, double) CalcVertexWithCenter(PointLatLng center, PointLatLng top, PointLatLng leftBottom, PointLatLng rightBottom, double distance)
         {
             //double dis_IA = Math.Sqrt(Math.Pow(center.Lat - top.Lat, 2) + Math.Pow(center.Lng - top.Lng, 2));
