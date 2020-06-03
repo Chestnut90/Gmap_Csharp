@@ -199,14 +199,16 @@ namespace vo.Gmap.Common
             PointLatLng C = rightBottom;
 
             // 2. get center.
-            PointLatLng I = CalcCenterInnerCircle(A, B, C);
+            //PointLatLng I = CalcCenterInnerCircle(A, B, C);
+            double average_lats = (A.Lat + B.Lat + C.Lat) / 3.0;
+            double average_lngs = (A.Lng + B.Lng + C.Lng) / 3.0;
+            PointLatLng I = new PointLatLng(average_lats, average_lngs);
 
             // Debug
             Debug.WriteLine($"Top : {A.Lat}, {A.Lng}");
             Debug.WriteLine($"Left bottom : {B.Lat}, {B.Lng}");
             Debug.WriteLine($"Right bottom : {C.Lat}, {C.Lng}");
             Debug.WriteLine($"inner center : {I.Lat}, {I.Lng}");
-
 
             var newTop = CalcVertexWithCenter(I, A, B, C, distance);
             var newRightBottom = CalcVertexWithCenter(I, C, A, B, distance);

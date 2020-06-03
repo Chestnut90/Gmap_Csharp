@@ -132,8 +132,10 @@ namespace vo.Gmap
         /// <param name="addDistance"></param>
         private (PointLatLng, PointLatLng) CalcBoundaryPointLatLngs(double distance)
         {
-            PointLatLng point1 = this.PointLatLngs[0];
-            PointLatLng point2 = this.PointLatLngs[1];
+            var points = this.PointSwap(this.PointLatLngs[0], this.PointLatLngs[1]);
+
+            PointLatLng point1 = points.Item1;
+            PointLatLng point2 = points.Item2;
 
             // new left top
             var leftTopUpValue = LatLngCommon.CalcDistanceAndBearing(point1, distance, 0.0);      // 1. origin left top to upside distance

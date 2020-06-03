@@ -261,7 +261,7 @@ namespace vo.Gmap
         }
         #endregion
 
-        #region tiling
+        #region Common Functions
         protected DrawingBrush tiling()
         {
 
@@ -310,6 +310,32 @@ namespace vo.Gmap
             return tileBrushWithTiling;
             //tilingExampleRectangle.Fill = tileBrushWithTiling;
 
+        }
+
+        protected (PointLatLng, PointLatLng) PointSwap(PointLatLng point1, PointLatLng point2)
+        {
+            double lat1 = point1.Lat;
+            double lat2 = point2.Lat;
+            double lng1 = point1.Lng;
+            double lng2 = point2.Lng;
+
+            if (lat1 < lat2)
+            {
+                double temp = lat1;
+                lat1 = lat2;
+                lat2 = temp;
+            }
+
+            if (lng1 > lng2)
+            {
+                double temp = lng1;
+                lng1 = lng2;
+                lng2 = temp;
+            }
+
+            PointLatLng leftTop = new PointLatLng(lat1, lng1);
+            PointLatLng rightBottom = new PointLatLng(lat2, lng2);
+            return (leftTop, rightBottom);
         }
         #endregion
 

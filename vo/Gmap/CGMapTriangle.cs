@@ -75,8 +75,13 @@ namespace vo.Gmap
         /// <param name="addDistance"></param>
         private (PointLatLng, PointLatLng) CalcBoundaryPointLatLngs(double addDistance)
         {
+            //var points = this.PointSwap(this.PointLatLngs[0], this.PointLatLngs[1]);
+            //PointLatLng point1 = points.Item1;
+            //PointLatLng point2 = points.Item2;
+
             PointLatLng point1 = this.PointLatLngs[0];
             PointLatLng point2 = this.PointLatLngs[1];
+
             return LatLngCommon.CalcOuterRectangleWithInnerCircle(point1, point2, addDistance);
         }
 
