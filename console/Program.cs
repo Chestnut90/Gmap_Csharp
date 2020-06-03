@@ -1,4 +1,5 @@
-﻿using console.DataBase.Schema;
+﻿using console.DataBase;
+using console.DataBase.Schema;
 using console.ViewModel;
 using MathNet.Numerics.LinearAlgebra;
 using System;
@@ -35,10 +36,46 @@ namespace console
 
         static void Main(string[] args)
         {
-            string nitFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.ini");
+            string iniFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.ini");
 
-            IniReading reader = new IniReading();
-            reader.GetAll(nitFileName);
+            IniFileReader reader = new IniFileReader();
+            reader.Read(iniFile);
+
+            string section_database = "DATABASE";
+            string key_host = "host";
+            string key_port = "port";
+            string key_sid = "sid";
+            string key_id = "id";
+            string key_password = "password";
+
+            string host = reader.GetValue(section_database, key_host);
+            string port = reader.GetValue(section_database, key_port);
+            string sid = reader.GetValue(section_database, key_sid);
+            string id = reader.GetValue(section_database, key_id);
+            string password = reader.GetValue(section_database, key_password);
+
+            Debug.WriteLine(host);
+            Debug.WriteLine(port);
+            Debug.WriteLine(sid);
+            Debug.WriteLine(id);
+            Debug.WriteLine(password);
+
+            string section_interestArea = "INTERESTAREA";
+            string key_latitude = "latitude";
+            string key_longitude = "longitude";
+            string key_description = "description";
+
+            string latitude = reader.GetValue(section_interestArea, key_latitude);
+            string longitude = reader.GetValue(section_interestArea, key_longitude);
+            string description = reader.GetValue(section_interestArea, key_description);
+
+            Debug.WriteLine(latitude);
+            Debug.WriteLine(longitude);
+            Debug.WriteLine(description);
+
+            INIReader iniReader = new INIReader(iniFile);
+            string value = iniReader.IniReadValue("DATABASE", "password");
+
 
         }
 
