@@ -105,72 +105,18 @@ namespace vo.Views
             gMapControl.IgnoreMarkerOnMouseWheel = true;
         }
 
+        #region Drawing Properties and Functions
         private DrawState drawState;        // Draw State.
         private bool isDrawing = false;     // if true then drawing state.
-        private Point start;                // start point of drawing object.
-        private Point end;                  // end point of drawing obejct.
         private GMapMarker drawingObject;   // Object to drawing. // default must be null.
         private int zIndex;                 // altitude of drawing object.
         private string tag;                 // tag -> id for drawing object.
+
         private void InvokeResizing()
         {
             // for invoking resize event.
             this.gMapControl.InitializeForBackgroundRendering((int)this.gMapControl.ActualWidth, (int)this.gMapControl.ActualHeight);
             //this.gMapControl.RenderSize = this.gMapControl.RenderSize;
-        }
-
-        /// <summary>
-        /// Context menu item click
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void Draw_Clicks(object sender, RoutedEventArgs e)
-        {
-            InputTextBox itb = new InputTextBox();
-
-            bool? result = itb.ShowDialog();
-
-            switch (result)
-            {
-                case true:
-
-                    string[] output = itb.GetInputObjects();
-                    if (output.Length != 2)
-                    {
-                        return;
-                    }
-                    tag = Convert.ToString(output[0]);
-                    zIndex = Convert.ToInt32(output[1]);
-
-                    break;
-                default:
-                    return;
-            }
-
-            var menuItem = (MenuItem)sender;
-            switch (menuItem.Header)
-            {
-                case "타원":
-                    this.drawState = DrawState.Ellipse;
-                    break;
-                case "삼각형":
-                    this.drawState = DrawState.Triangle;
-                    break;
-                case "사각형":
-                    this.drawState = DrawState.Rectangle;
-                    break;
-                case "다각형":
-                    this.drawState = DrawState.Polygon;
-                    break;
-                default:
-                    this.drawState = DrawState.None;
-                    this.gMapControl.Cursor = Cursors.AppStarting;
-                    return;
-            }
-
-            this.gMapControl.Cursor = Cursors.Hand;
-            // map move -> to disable.
-
         }
 
         private void SetStartDrawing(DrawState drawState)
@@ -186,24 +132,63 @@ namespace vo.Views
             this.isDrawing = false;
         }
 
-        private (int, int) GetLocalPoint(MouseButtonEventArgs e)
-        {
-            int x = (int)e.GetPosition(this).X;
-            int y = (int)e.GetPosition(this).Y;
+        #endregion
 
-            return (x, y);
+        #region Mouse information
+        protected PointLatLng MouseLocationLatLng { get; set; }
+        protected Point MouseLocationPixel { get; set; }    // not use.
+        protected double Altitude { get; set; }
+        public string LatLngAltInfo
+        {
+            get
+            {
+                return $"{MouseLocationLatLng.Lat}, {MouseLocationLatLng.Lng}, {this.gMapControl.Zoom}, {Altitude},  {this.gMapControl.ZoomX}, {this.gMapControl.ZoomY}";
+            }
         }
+        private void SetMouseInformation(Point point1)
+        {
+            MouseLocationPixel = point1;
+            MouseLocationLatLng = this.gMapControl.FromLocalToLatLng((int)point1.X, (int)point1.Y);
+            Altitude = this.CalcAltitude();
+        }
+
+        /// <summary>
+        /// Calculate Altitude with static.
+        /// </summary>
+        /// <returns></returns>
+        private double CalcAltitude()
+        {
+
+            // reference PointLatlngs from google earth
+            // Point 1
+            // Latitude  :  36d21m39s   = 36.36083333333333
+            // Longitude :  127d22m56s  = 127.3822222222222
+            // Point 2
+            // Latitude  :  36d21m39s   = 36.36083333333333
+            // Longitude :  127d23m0s  = 127.38333333333334
+            // Altitude  :  275meter   
+            // Distance  :  99.8meter (100meter)
+
+            Point point1 = new Point(210, 90);
+            Point point2 = new Point(602, 90);
+
+            PointLatLng latlng1 = this.gMapControl.FromLocalToLatLng((int)point1.X, (int)point1.Y);
+            PointLatLng latlng2 = this.gMapControl.FromLocalToLatLng((int)point2.X, (int)point2.Y);
+
+            double distance = LatLngCommon.CalcDistance(latlng1, latlng2);
+
+            double altitude = 275.0 * distance / 100.0;
+
+            return altitude;
+        }
+        #endregion
 
         private void GMapControl_MouseMove(object sender, MouseEventArgs e)
         {
             var localPoint = e.GetPosition(this);
-            PointLatLng pointLatLng = this.gMapControl.FromLocalToLatLng((int)localPoint.X, (int)localPoint.Y);
-            double width = Math.Abs(localPoint.X - start.X);
-            double height = Math.Abs(localPoint.Y - start.Y);
-
-            this.TextBlockLatLng.Text = $"{pointLatLng.Lat}, {pointLatLng.Lng}, " +
-                                        $"{this.gMapControl.Zoom}, {this.gMapControl.ZoomX}, {this.gMapControl.ZoomY}";
-
+            // set mouse info
+            this.SetMouseInformation(localPoint);
+            this.TextBlockLatLng.Text = this.LatLngAltInfo;
 
             if (this.drawState.Equals(DrawState.None))
             {
@@ -219,17 +204,16 @@ namespace vo.Views
                 {
                     case DrawState.Ellipse:
 
-                        (drawingObject as CGMapEllipse).SetNextPoint(pointLatLng);
+                        (drawingObject as CGMapEllipse).SetNextPoint(MouseLocationLatLng);
                         break;
                     case DrawState.Rectangle:
-                        (drawingObject as CGMapRectangle).SetNextPoint(pointLatLng);
+                        (drawingObject as CGMapRectangle).SetNextPoint(MouseLocationLatLng);
                         break;
                     case DrawState.Polygon:
-                        //(drawingObject as CGMapPolygon).SetNextPoint(pointLatLng);
                         // None.
                         break;
                     case DrawState.Triangle:
-                        (drawingObject as CGMapTriangle).SetNextPoint(pointLatLng);
+                        (drawingObject as CGMapTriangle).SetNextPoint(MouseLocationLatLng);
                         break;
                     default:
                         return;
@@ -242,8 +226,8 @@ namespace vo.Views
 
         private void GMapControl_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            var localPoint = GetLocalPoint(e);
-            PointLatLng pointLatLng = this.gMapControl.FromLocalToLatLng(localPoint.Item1, localPoint.Item2);
+            var localPoint = e.GetPosition(this);
+            PointLatLng pointLatLng = this.gMapControl.FromLocalToLatLng((int)localPoint.X, (int)localPoint.Y);
 
             switch (this.drawState)
             {
@@ -251,50 +235,43 @@ namespace vo.Views
 
                     if (!this.isDrawing)
                     {
-                        this.start = new Point(localPoint.Item1, localPoint.Item2);
                         drawingObject = new CGMapEllipse(pointLatLng, this.tag, this.zIndex);
                         this.isDrawing = true;
                         this.gMapControl.Markers.Add(drawingObject);
                         return;
                     }
-                    //(drawingObject as CGMapEllipse).Points[1] = pointLatLng;
 
                     break;
                 case DrawState.Rectangle:
 
                     if (!this.isDrawing)
                     {
-                        this.start = new Point(localPoint.Item1, localPoint.Item2);
                         drawingObject = new CGMapRectangle(pointLatLng, this.tag, this.zIndex);
                         this.isDrawing = true;
                         this.gMapControl.Markers.Add(drawingObject);
                         return;
                     }
-                    //(drawingObject as CGMapRectange).Point2 = pointLatLng;
 
                     break;
                 case DrawState.Polygon:
                     if (!this.isDrawing)
                     {
-                        this.start = new Point(localPoint.Item1, localPoint.Item2);
                         drawingObject = new CGMapPolygon(pointLatLng, this.tag, this.zIndex);
                         this.isDrawing = true;
                         this.gMapControl.Markers.Add(drawingObject);
                         return;
                     }
                     (drawingObject as CGMapPolygon).SetNextPoint(pointLatLng);
-                    //(drawingObject as CGMapPolygon).SetShape(pointLatLng);
+
                     break;
                 case DrawState.Triangle:
                     if (!this.isDrawing)
                     {
-                        this.start = new Point(localPoint.Item1, localPoint.Item2);
                         drawingObject = new CGMapTriangle(pointLatLng, this.tag, this.zIndex);
                         this.isDrawing = true;
                         this.gMapControl.Markers.Add(drawingObject);
                         return;
                     }
-                    //(drawingObject as CGMapTriangle).Point2 = pointLatLng;
                     break;
                 case DrawState.None:
                     return;
@@ -309,6 +286,15 @@ namespace vo.Views
             {
                 this.SetEndDrawing();
             }
+        }
+
+        private void GMapControl_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            var localPoint = e.GetPosition(this);
+            // set mouse info
+            this.SetMouseInformation(localPoint);
+
+            this.TextBlockLatLng.Text = this.LatLngAltInfo;
         }
 
         #region Message Operation
@@ -401,6 +387,7 @@ namespace vo.Views
 
         #endregion
 
+        #region Context Menu events
         private void MenuDefenseSystem_Click(object sender, RoutedEventArgs e)
         {
 
@@ -411,22 +398,64 @@ namespace vo.Views
 
         }
 
+        /// <summary>
+        /// Context menu item click
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Draw_Clicks(object sender, RoutedEventArgs e)
+        {
+            InputTextBox itb = new InputTextBox();
+
+            bool? result = itb.ShowDialog();
+
+            switch (result)
+            {
+                case true:
+
+                    string[] output = itb.GetInputObjects();
+                    if (output.Length != 2)
+                    {
+                        return;
+                    }
+                    tag = Convert.ToString(output[0]);
+                    zIndex = Convert.ToInt32(output[1]);
+
+                    break;
+                default:
+                    return;
+            }
+
+            var menuItem = (MenuItem)sender;
+            switch (menuItem.Header)
+            {
+                case "타원":
+                    this.drawState = DrawState.Ellipse;
+                    break;
+                case "삼각형":
+                    this.drawState = DrawState.Triangle;
+                    break;
+                case "사각형":
+                    this.drawState = DrawState.Rectangle;
+                    break;
+                case "다각형":
+                    this.drawState = DrawState.Polygon;
+                    break;
+                default:
+                    this.drawState = DrawState.None;
+                    this.gMapControl.Cursor = Cursors.AppStarting;
+                    return;
+            }
+
+            this.gMapControl.Cursor = Cursors.Hand;
+            // map move -> to disable.
+
+        }
+
         private void MenuJamming_Click(object sender, RoutedEventArgs e)
         {
 
         }
-
-        private void GMapControl_MouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            var localPoint = e.GetPosition(this);
-            PointLatLng pointLatLng = this.gMapControl.FromLocalToLatLng((int)localPoint.X, (int)localPoint.Y);
-            double width = Math.Abs(localPoint.X - start.X);
-            double height = Math.Abs(localPoint.Y - start.Y);
-
-            this.TextBlockLatLng.Text = $"{pointLatLng.Lat}, {pointLatLng.Lng}, " +
-                                        $"{this.gMapControl.Zoom}, {this.gMapControl.ZoomX}, {this.gMapControl.ZoomY}";
-
-
-        }
+        #endregion
     }
 }

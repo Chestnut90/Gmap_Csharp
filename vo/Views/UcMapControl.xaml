@@ -23,6 +23,6 @@
                 </ContextMenu>
             </gmaps:GMapControl.ContextMenu>
         </gmaps:GMapControl>
-        <TextBlock Name="TextBlockLatLng" TextWrapping="Wrap" Text="TextBlock" Height="32" Width="318" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+        <TextBlock Name="TextBlockLatLng" TextWrapping="Wrap" Text="" Foreground="Yellow" Background="Black" Height="32" Width="318" HorizontalAlignment="Right" VerticalAlignment="Top"/>
     </Grid>
 </UserControl>
