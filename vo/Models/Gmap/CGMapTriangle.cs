@@ -11,10 +11,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using vo.Gmap.Common;
+using vo.Models.Gmap.Common;
 using vo.Views;
 
-namespace vo.Gmap
+namespace vo.Models.Gmap
 {
     class CGMapTriangle : CGMapMarker
     {

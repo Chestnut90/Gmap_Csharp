@@ -85,7 +85,7 @@
     <Compile Include="DataBase\Schema\DBSchema.cs" />
     <Compile Include="DataBase\Schema\Drone.cs" />
     <Compile Include="DataBase\Schema\Table1.cs" />
-    <Compile Include="IniReading.cs" />
+    <Compile Include="IniFileReader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ViewModel\CObservableCollection.cs" />

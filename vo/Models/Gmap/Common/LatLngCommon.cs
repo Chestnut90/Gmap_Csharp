@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace vo.Gmap.Common
+namespace vo.Models.Gmap.Common
 {
     class LatLngCommon
     {

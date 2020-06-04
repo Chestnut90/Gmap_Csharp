@@ -16,8 +16,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using vo.Gmap;
-using vo.Gmap.Common;
+using vo.Models.Gmap;
+using vo.Models.Gmap.Common;
 
 namespace vo.Views
 {
@@ -321,10 +321,10 @@ namespace vo.Views
 
             switch (param.Action)
             {
-                case Gmap.Common.Action.MODIFICATION:
+                case Models.Gmap.Common.Action.MODIFICATION:
                     this.GMapMarker_Modification(param.Data, param.MarkerType);
                     break;
-                case Gmap.Common.Action.DELETE:
+                case Models.Gmap.Common.Action.DELETE:
                     var deleteItem = this.gMapControl.Markers.Where(marker => marker.Tag.Equals(param.Sender)).FirstOrDefault();
                     if (deleteItem is null)
                     {
@@ -333,7 +333,7 @@ namespace vo.Views
                     this.gMapControl.Markers.Remove(deleteItem);
 
                     break;
-                case Gmap.Common.Action.ALARM:
+                case Models.Gmap.Common.Action.ALARM:
 
                     this.GMapMarker_AlarmSetting(param.Data, param.MarkerType);
 

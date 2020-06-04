@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace vo
+namespace vo.Models
 {
     public class TMessage<ViewModel>
     {

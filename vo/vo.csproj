@@ -124,26 +124,35 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Gmap\CGMapEllipse.cs" />
-    <Compile Include="Gmap\CGMapMarker.cs" />
-    <Compile Include="Gmap\CGMapPolygon.cs" />
-    <Compile Include="Gmap\CGMapRectangle.cs" />
-    <Compile Include="Gmap\CGMapTriangle.cs" />
-    <Compile Include="Gmap\Common\LatLngCommon.cs" />
-    <Compile Include="Gmap\Common\GMapMessage.cs" />
-    <Compile Include="Views\ProcessWindow.xaml.cs">
-      <DependentUpon>ProcessWindow.xaml</DependentUpon>
+    <Compile Include="Models\Gmap\CGMapEllipse.cs" />
+    <Compile Include="Models\Gmap\CGMapMarker.cs" />
+    <Compile Include="Models\Gmap\CGMapPolygon.cs" />
+    <Compile Include="Models\Gmap\CGMapRectangle.cs" />
+    <Compile Include="Models\Gmap\CGMapTriangle.cs" />
+    <Compile Include="Models\Gmap\Common\LatLngCommon.cs" />
+    <Compile Include="Models\Gmap\Common\GMapMessage.cs" />
+    <Compile Include="Views\ControlHost.cs" />
+    <Compile Include="Views\ProcessHost.cs" />
+    <Compile Include="Views\ProcessSource.cs" />
+    <Compile Include="Views\ProcessWindow\ProcessTestWindow.xaml.cs">
+      <DependentUpon>ProcessTestWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ProcessWindow\UcBorder.xaml.cs">
+      <DependentUpon>UcBorder.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ProcessWindow\UcProcessContainer.xaml.cs">
+      <DependentUpon>UcProcessContainer.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ProcessWindow\WindowBorder.xaml.cs">
+      <DependentUpon>WindowBorder.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\UcMapControl.xaml.cs">
       <DependentUpon>UcMapControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Views\UserProcessWindow.xaml.cs">
-      <DependentUpon>UserProcessWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Views\InputTextBox.xaml.cs">
       <DependentUpon>InputTextBox.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Views\TMessage.cs" />
+    <Compile Include="Models\TMessage.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -156,15 +165,23 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Views\ProcessWindow.xaml">
+    <Page Include="Views\ProcessWindow\ProcessTestWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ProcessWindow\UcBorder.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ProcessWindow\UcProcessContainer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ProcessWindow\WindowBorder.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\UcMapControl.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Views\UserProcessWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -201,6 +218,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ViewModels\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

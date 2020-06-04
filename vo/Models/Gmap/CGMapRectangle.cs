@@ -11,10 +11,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using vo.Gmap.Common;
+using vo.Models.Gmap.Common;
 using vo.Views;
 
-namespace vo.Gmap
+namespace vo.Models.Gmap
 {
     class CGMapRectangle : CGMapMarker
     {
@@ -83,8 +83,6 @@ namespace vo.Gmap
         {
             Path shape = (this.Shape as Path);
 
-            Point center = new Point((localPath[0].X + localPath[1].X) / 2, (localPath[0].Y + localPath[1].Y) / 2);
-
             if (this.IsAlarm)
             {
                 if (localPath.Count == 4)
@@ -109,15 +107,86 @@ namespace vo.Gmap
         /// <param name="rightBottom"></param>
         private void DrawRectangle(RectangleGeometry rectangleGeometry, Point leftTop, Point rightBottom)
         {
-            //GeometryDrawing gd = new GeometryDrawing();
-            //gd.Brush = this.tiling();
-            //gd.Geometry = rectangleGeometry;
+            rectangleGeometry.Rect = new Rect(leftTop, rightBottom);
 
             //DrawingGroup
-            rectangleGeometry.Rect = new Rect(leftTop, rightBottom);
+            GeometryDrawing drawing = new GeometryDrawing();
+            drawing.Geometry = rectangleGeometry;
+
+            Pen pen;
+            if (rectangleGeometry.Equals(this.AlarmGeometry))
+            {
+                pen = new Pen(Brushes.Yellow, 10);
+            }
+            else
+            {
+                pen = new Pen(Brushes.Green, 10);
+            }
+
+            drawing.Pen = pen;
+
         }
 
-        
+        private void Test()
+        {
+            //
+            // Create the Geometry to draw.
+            //
+            GeometryGroup ellipses = new GeometryGroup();
+            ellipses.Children.Add(
+                new EllipseGeometry(new Point(50, 50), 45, 20)
+                );
+            ellipses.Children.Add(
+                new EllipseGeometry(new Point(50, 50), 20, 45)
+                );
+
+            //
+            // Create a GeometryDrawing.
+            //
+            GeometryDrawing aGeometryDrawing = new GeometryDrawing();
+            aGeometryDrawing.Geometry = ellipses;
+
+            // Paint the drawing with a gradient.
+            aGeometryDrawing.Brush =
+                new LinearGradientBrush(
+                    Colors.Blue,
+                    Color.FromRgb(204, 204, 255),
+                    new Point(0, 0),
+                    new Point(1, 1));
+
+            // Outline the drawing with a solid color.
+            aGeometryDrawing.Pen = new Pen(Brushes.Black, 10);
+
+            //
+            // Use a DrawingImage and an Image control
+            // to display the drawing.
+            //
+            DrawingImage geometryImage = new DrawingImage(aGeometryDrawing);
+
+            // Freeze the DrawingImage for performance benefits.
+            geometryImage.Freeze();
+
+            Image anImage = new Image();
+            anImage.Source = geometryImage;
+            anImage.Stretch = Stretch.None;
+            anImage.HorizontalAlignment = HorizontalAlignment.Left;
+
+            //
+            // Place the image inside a border and
+            // add it to the page.
+            //
+            Border exampleBorder = new Border();
+            exampleBorder.Child = anImage;
+            exampleBorder.BorderBrush = Brushes.Gray;
+            exampleBorder.BorderThickness = new Thickness(1);
+            exampleBorder.HorizontalAlignment = HorizontalAlignment.Left;
+            exampleBorder.VerticalAlignment = VerticalAlignment.Top;
+            exampleBorder.Margin = new Thickness(10);
+
+            //this.Margin = new Thickness(20);
+            //this.Background = Brushes.White;
+            //this.Content = exampleBorder;
+        }
 
         protected override UIElement SetShape()
         {
@@ -145,8 +214,9 @@ namespace vo.Gmap
         /// <returns></returns>
         private (PointLatLng, PointLatLng) CalcBoundaryPointLatLngs(double distance)
         {
-            PointLatLng point1 = this.PointLatLngs[0];
-            PointLatLng point2 = this.PointLatLngs[1];
+            var points = this.Swap(this.PointLatLngs[0], this.PointLatLngs[1]);
+            PointLatLng point1 = points.Item1;
+            PointLatLng point2 = points.Item2;
 
             // new left top
             var leftTopUpValue = LatLngCommon.CalcDistanceAndBearing(point1, distance, 0.0);      // 1. origin left top to upside distance
@@ -159,6 +229,24 @@ namespace vo.Gmap
             PointLatLng newRightBottom = new PointLatLng(rightBottomDownValue.Item1.Lat, rightBottomRightValue.Item1.Lng);
 
             return (newLeftTop, newRightBottom);
+        }
+
+        private (PointLatLng, PointLatLng) Swap(PointLatLng p1, PointLatLng p2)
+        {
+            // 1Quadrant (1사분면)
+            if (p1.Lng < p2.Lng & p1.Lat < p2.Lat)
+            {
+                PointLatLng lt = new PointLatLng(p2.Lat, p1.Lng);
+                PointLatLng rb = new PointLatLng(p1.Lat, p2.Lng);
+                return (lt, rb);
+            }
+            else if (p1.Lat > p2.Lat & p1.Lng < p2.Lng)
+            {
+                PointLatLng lt = new PointLatLng(p1.Lat, p2.Lng);
+                PointLatLng rb = new PointLatLng(p2.Lat, p1.Lng);
+                return (lt, rb);
+            }
+            return (p1, p2);
         }
     }
 }

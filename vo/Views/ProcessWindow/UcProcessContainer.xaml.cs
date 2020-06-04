@@ -13,16 +13,18 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace vo.Views
+namespace vo.Views.ProcessWindow
 {
     /// <summary>
-    /// UserProcessWindow.xaml에 대한 상호 작용 논리
+    /// UcProcessContainer.xaml에 대한 상호 작용 논리
     /// </summary>
-    public partial class UserProcessWindow : UserControl
+    public partial class UcProcessContainer : UserControl
     {
-        public UserProcessWindow()
+        public UcProcessContainer()
         {
             InitializeComponent();
+
+            this.ViewBox = new Viewbox();
         }
     }
 }

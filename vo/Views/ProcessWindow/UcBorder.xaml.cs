@@ -10,16 +10,17 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace vo
+namespace vo.Views.ProcessWindow
 {
     /// <summary>
-    /// ProcessWindow.xaml에 대한 상호 작용 논리
+    /// UcBorder.xaml에 대한 상호 작용 논리
     /// </summary>
-    public partial class ProcessWindow : Window
+    public partial class UcBorder : UserControl
     {
-        public ProcessWindow()
+        public UcBorder()
         {
             InitializeComponent();
         }
