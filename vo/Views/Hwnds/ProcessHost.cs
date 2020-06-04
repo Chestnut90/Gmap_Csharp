@@ -12,7 +12,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using vo.Views.ProcessWindow;
 
-namespace vo.Views
+namespace vo.Hwnds.Views
 {
     class ProcessHost : HwndHost
     {

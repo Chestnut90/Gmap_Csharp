@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace vo.Views
+namespace vo.Hwnds.Views
 {
     class ProcessSource
     {

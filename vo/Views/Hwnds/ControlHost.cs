@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Interop;
 
-namespace vo.Views
+namespace vo.Hwnds.Views
 {
     public class ControlHost : HwndHost
     {

@@ -131,9 +131,9 @@
     <Compile Include="Models\Gmap\CGMapTriangle.cs" />
     <Compile Include="Models\Gmap\Common\LatLngCommon.cs" />
     <Compile Include="Models\Gmap\Common\GMapMessage.cs" />
-    <Compile Include="Views\ControlHost.cs" />
-    <Compile Include="Views\ProcessHost.cs" />
-    <Compile Include="Views\ProcessSource.cs" />
+    <Compile Include="Views\Hwnds\ControlHost.cs" />
+    <Compile Include="Views\Hwnds\ProcessHost.cs" />
+    <Compile Include="Views\Hwnds\ProcessSource.cs" />
     <Compile Include="Views\ProcessWindow\ProcessTestWindow.xaml.cs">
       <DependentUpon>ProcessTestWindow.xaml</DependentUpon>
     </Compile>
