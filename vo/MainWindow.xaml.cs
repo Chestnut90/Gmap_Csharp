@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using vo.Hwnds.Views;
+using vo.ProcessDocking;
 using vo.Views;
 using vo.Views.ProcessWindow;
 
@@ -24,6 +25,8 @@ namespace vo
             InitializeComponent();
 
             this.GetWindow.Click += this.GetWindow_Click;
+            DockingTargetWindow wnd = new DockingTargetWindow();
+            wnd.Show();
         }
 
         string sFilePath = @"D:\Dev\02.AntiDrone\02. src\RFScaner\RFScaner\bin\x64\Debug\RFScaner.exe";
