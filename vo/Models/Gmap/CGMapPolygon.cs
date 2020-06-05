@@ -17,49 +17,13 @@ namespace vo.Models.Gmap
         public CGMapPolygon(PointLatLng pos, string tag, int zIndex) : base(pos, tag, zIndex)
         {
             this.MarkerType = Common.MarkerType.POLYGON;
-            BoundaryPoints = new List<PointLatLng>();
         }
 
-        private List<PointLatLng> BoundaryPoints { get; set; }
-
-        public void SetNextPoint(PointLatLng point)
+        public override void SetNextPoint(PointLatLng point)
         {
             this.PointLatLngs.Add(point);
         }
-
-        public override List<PointLatLng> Points
-        {
-            get
-            {
-                IEnumerable<PointLatLng> t = this.PointLatLngs.Concat(this.BoundaryPoints);
-                return t.ToList();
-                //return new List<PointLatLng>(this.PointLatLngs).Concat(this.BoundaryPoints);
-            }
-            set
-            {
-                base.Points = value;
-            }
-        }
-
-        /// <summary>
-        /// Override
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        protected override void PointLatLngs_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            int count = this.PointLatLngs.Count;
-
-            if (!this.IsAlarm)
-            {
-                this.BoundaryPoints = new List<PointLatLng>();
-                return;
-            }
-
-            // set boundaryPoints
-            this.BoundaryPoints = LatLngCommon.CalcBoundaryPointsAsPolygon(this.PointLatLngs.ToList(), this.AlarmDistance);
-        }
-
+        
         public override Path CreatePath(List<Point> localPath, bool addBlurEffect)
         {
             Path shape = (this.Shape as Path);
@@ -81,8 +45,6 @@ namespace vo.Models.Gmap
 
             return shape;
         }
-
-
 
         private void DrawPolygon(PathGeometry geometry, List<Point> points)
         {
@@ -118,26 +80,9 @@ namespace vo.Models.Gmap
 
         }
 
-        /// <summary>
-        /// Define Shape of Derived class.
-        /// </summary>
-        /// <returns></returns>
-        protected override UIElement SetShape()
+        protected override List<PointLatLng> CalcBoundaryPoints(List<PointLatLng> points, double distance)
         {
-            this.Shape = new Path();
-            this.GeometryGroup = new GeometryGroup();
-            this.OriginGeometry = new PathGeometry();
-            this.AlarmGeometry = new PathGeometry();
-            this.GeometryGroup.Children.Add(OriginGeometry);
-            this.GeometryGroup.Children.Add(AlarmGeometry);
-            this.GeometryGroup.FillRule = FillRule.Nonzero;
-
-            (this.Shape as Path).Data = GeometryGroup;
-            (this.Shape as Path).Stroke = Brushes.Red;
-            (this.Shape as Path).StrokeThickness = 1.5;
-            (this.Shape as Path).Fill = this.tiling();
-            return this.Shape;
+            return LatLngCommon.CalcBoundaryPointsAsPolygon(points, distance);
         }
-
     }
 }

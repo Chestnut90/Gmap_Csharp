@@ -34,7 +34,7 @@ namespace console
             }
         }
 
-        static void Main(string[] args)
+        public void IniFIleTest()
         {
             string iniFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.ini");
 
@@ -76,6 +76,45 @@ namespace console
             INIReader iniReader = new INIReader(iniFile);
             string value = iniReader.IniReadValue("DATABASE", "password");
 
+        }
+
+        public enum my_enum
+        {
+            NONE = 0,
+            a,
+            b,
+            c,
+        }
+
+        public static object ConvertEnum<TEnum>(int value)
+        {
+            if (!typeof(TEnum).IsEnum)
+            {
+                throw new Exception("not enum type.");
+            }
+            Type enum_type = typeof(TEnum);
+            //var enum_values = Enum.GetValues(typeof(TEnum));
+
+
+            bool isDefined = Enum.IsDefined(enum_type, value);
+
+            if (isDefined)
+            {
+                return Enum.ToObject(enum_type, value);
+            }
+            return Enum.ToObject(enum_type, 0);
+        }
+
+        static void Main(string[] args)
+        {
+
+            my_enum my = my_enum.a;
+
+            object result = ConvertEnum<my_enum>(2);
+
+            Debug.WriteLine(result);
+
+            
 
         }
 

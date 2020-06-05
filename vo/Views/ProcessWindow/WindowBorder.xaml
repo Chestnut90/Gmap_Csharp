@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:vo.Views.ProcessWindow"
         mc:Ignorable="d"
-        Title="WindowBorder" Height="450" Width="800" Background="Wheat" Foreground="{x:Null}">
-    <Border Name="Stack" Background="White">
+        Title="WindowBorder" Height="450" Width="800" Background="Wheat" >
+    <StackPanel Name="Stack">
         
-    </Border>
+    </StackPanel>
 </Window>

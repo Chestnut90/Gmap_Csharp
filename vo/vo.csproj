@@ -134,6 +134,7 @@
     <Compile Include="Views\Hwnds\ControlHost.cs" />
     <Compile Include="Views\Hwnds\ProcessHost.cs" />
     <Compile Include="Views\Hwnds\ProcessSource.cs" />
+    <Compile Include="Views\Hwnds\User32Dll.cs" />
     <Compile Include="Views\ProcessWindow\ProcessTestWindow.xaml.cs">
       <DependentUpon>ProcessTestWindow.xaml</DependentUpon>
     </Compile>
@@ -142,6 +143,9 @@
     </Compile>
     <Compile Include="Views\ProcessWindow\UcProcessContainer.xaml.cs">
       <DependentUpon>UcProcessContainer.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ProcessWindow\UcTest.xaml.cs">
+      <DependentUpon>UcTest.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\ProcessWindow\WindowBorder.xaml.cs">
       <DependentUpon>WindowBorder.xaml</DependentUpon>
@@ -174,6 +178,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\ProcessWindow\UcProcessContainer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ProcessWindow\UcTest.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -26,7 +26,10 @@ namespace vo.Hwnds.Views
 
         private Process process;
         private IntPtr processWindowHandle;
-        private IntPtr handle;
+        private IntPtr _hwndHost;
+        public IntPtr HwndHost { get; private set; }
+        private int _hostHeight = 500;
+        private int _hostWidth = 500;
 
         private void Building()
         {
@@ -43,7 +46,7 @@ namespace vo.Hwnds.Views
                     {
                         FileName = this.ProcessName,
                         UseShellExecute = false,
-                        WindowStyle = ProcessWindowStyle.Minimized,
+                        CreateNoWindow = true,
                     }
                 };
                 process.Start();
@@ -65,30 +68,30 @@ namespace vo.Hwnds.Views
 
         protected override HandleRef BuildWindowCore(HandleRef hwndParent)
         {
-            //handle = CreateWindowEx(0, "static", "",
-            //    WsChild | WsVisible | WsBorder | WsVscroll,
-            //    0, 0,
-            //    1000, 1000,
-            //    hwndParent.Handle,
-            //    processWindowHandle,
-            //    IntPtr.Zero,
-            //    0);
 
+            HwndHost = IntPtr.Zero;
+            _hwndHost = IntPtr.Zero;
 
-            WindowBorder window = new WindowBorder();
-            //window.Visibility = Visibility.Hidden;
-            window.Show();
+            _hwndHost = CreateWindowEx(0, "static", "",
+                WsChild | WsVisible,
+                0, 0,
+                _hostHeight, _hostWidth,
+                hwndParent.Handle,
+                (IntPtr)HostId,
+                IntPtr.Zero,
+                0);
 
-            HwndSourceParameters parameters = new HwndSourceParameters();
-            parameters.WindowStyle = WsVisible | WsChild;
-            parameters.ParentWindow = hwndParent.Handle;
+            HwndHost = CreateWindowEx(0, "listbox", "",
+                WsChild | WsVisible | LbsNotify
+                | WsVscroll | WsBorder,
+                0, 0,
+                _hostHeight, _hostWidth,
+                _hwndHost,
+                (IntPtr)ListboxId,
+                IntPtr.Zero,
+                0);
 
-            HwndSource source = new HwndSource(parameters);
-            source.RootVisual = (window.Stack.Child as Visual);
-
-            var helper = new WindowInteropHelper(Window.GetWindow(window));
-
-            return new HandleRef(this, helper.Handle);
+            return new HandleRef(this, _hwndHost);
         }
 
         protected override IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)

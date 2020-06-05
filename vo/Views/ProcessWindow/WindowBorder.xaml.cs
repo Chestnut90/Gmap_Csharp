@@ -15,6 +15,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using vo.Views.Hwnds;
 
 namespace vo.Views.ProcessWindow
 {
@@ -23,14 +24,21 @@ namespace vo.Views.ProcessWindow
     /// </summary>
     public partial class WindowBorder : Window
     {
-        public WindowBorder(string processFile, int width, int height)
+        public WindowBorder(string processFile, int width=0, int height=0)
         {
             InitializeComponent();
 
-            this.ProcessFile = processFile;
+            this.ProcessFileName = processFile;
             this.ProcessWidth = width;
+            if (this.ProcessWidth == 0)
+            {
+                this.ProcessWidth = 500;
+            }
             this.ProcessHeight = height;
-            this.Building();
+            if(this.ProcessHeight == 0)
+            {
+                this.ProcessHeight = 500;
+            }
         }
 
         public WindowBorder()
@@ -38,57 +46,96 @@ namespace vo.Views.ProcessWindow
             InitializeComponent();
         }
 
-        public string ProcessFile { get; private set; }
+        public string ProcessFileName { get; private set; }
         public int ProcessWidth { get; set; }
         public int ProcessHeight { get; set; }
-        private Process proc;
-        private IntPtr handle;
+        private Process process;
+        private IntPtr processWindowHandle;
 
-        private void Building()
+        public IntPtr RunProcess(string fileName = null)
         {
-            if (!(proc is null))
+            if(fileName is null)
             {
-                proc.Kill();
+                fileName = this.ProcessFileName;
+            }
+
+            if(!(process is null))
+            {
+                process.Kill();
             }
 
             try
             {
-                proc = new Process()
+                
+                process = new Process()
                 {
                     StartInfo = new ProcessStartInfo()
                     {
-                        FileName = ProcessFile,
+                        FileName = fileName,
                         UseShellExecute = false,
                         WindowStyle = ProcessWindowStyle.Minimized,
+                        CreateNoWindow = false,
                     }
                 };
-                proc.Start();
+                process.Start();
 
                 Thread.Sleep(5000);
-                proc.WaitForInputIdle();
+                process.WaitForInputIdle();
 
-                handle = proc.MainWindowHandle;
+                processWindowHandle = process.MainWindowHandle;
+                return processWindowHandle;
             }
             catch (Exception ex)
             {
                 throw ex;
             }
+        }
 
-            // process window handling
-            SetWindowLongA(handle, GWL_STYLE, WS_VISIBLE);
+        public void Building(IntPtr handle = default(IntPtr))
+        {
+            if (handle.Equals(default(IntPtr)))
+            {
+                handle = this.processWindowHandle;
+            }
 
             this.Show();
             this.ShowActivated = true;
 
-            var h = new WindowInteropHelper(Window.GetWindow(this.Stack));
+            this.BuildWithChild(handle);
+
+            
+            return;
+        }
+
+        private void BuildWithOwner(IntPtr sourceHandle)
+        {
+            var helper = new WindowInteropHelper(Window.GetWindow(this.Stack));
+            helper.Owner = sourceHandle;
+        }
+
+        private void BuildWithChild(IntPtr sourceHandle)
+        {
+            User32Dll.SetWindowLongA(sourceHandle, User32Dll.GWL_STYLE, User32Dll.WS_VISIBLE);
+
+            var helper = new WindowInteropHelper(Window.GetWindow(this.Stack));
+            User32Dll.SetParent(sourceHandle, helper.Handle);
+            User32Dll.MoveWindow(sourceHandle, 0, 0, (int)this.ActualWidth, (int)this.ActualHeight, true);
+        }
+
+        private void BuildWithHwndSource(IntPtr sourceHandle)
+        {
+            HwndSource procHwndSource = HwndSource.FromHwnd(sourceHandle);
+
+            var h = new WindowInteropHelper(Window.GetWindow(this));
             //SetParent(handle, h.Handle);
 
             HwndSourceParameters parameters = new HwndSourceParameters();
 
-            parameters.WindowStyle = WS_VISIBLE | WS_CHILD;
+
+            parameters.WindowStyle = User32Dll.WS_VISIBLE | User32Dll.WS_CHILD;
             parameters.SetPosition(0, 0);
             parameters.SetSize((int)this.ProcessWidth, (int)this.ProcessHeight);
-            parameters.ParentWindow = handle;
+            parameters.ParentWindow = h.Handle;
             //parameters.UsesPerPixelOpacity = true;
             HwndSource src = new HwndSource(parameters);
 
@@ -102,53 +149,9 @@ namespace vo.Views.ProcessWindow
             int x = (int)this.Left;
             int y = (int)this.Top;
 
-            MoveWindow(handle, x, y, (int)this.ProcessWidth - 3, (int)this.ProcessHeight - 2, true);
+            //User32Dll.MoveWindow(handle, x, y, (int)this.ProcessWidth - 3, (int)this.ProcessHeight - 2, true);
 
-            return;
         }
 
-        #region User32 dll functions
-        [DllImport("user32.dll", EntryPoint = "GetWindowThreadProcessId", SetLastError = true,
-             CharSet = CharSet.Unicode, ExactSpelling = true,
-             CallingConvention = CallingConvention.StdCall)]
-        private static extern long GetWindowThreadProcessId(long hWnd, long lpdwProcessId);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern long SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
-
-        [DllImport("user32.dll", EntryPoint = "GetWindowLongA", SetLastError = true)]
-        private static extern long GetWindowLong(IntPtr hwnd, int nIndex);
-
-        [DllImport("user32.dll", EntryPoint = "SetWindowLongA", SetLastError = true)]
-        public static extern int SetWindowLongA([System.Runtime.InteropServices.InAttribute()] System.IntPtr hWnd, int nIndex, int dwNewLong);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern long SetWindowPos(IntPtr hwnd, long hWndInsertAfter, long x, long y, long cx, long cy, long wFlags);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool MoveWindow(IntPtr hwnd, int x, int y, int cx, int cy, bool repaint);
-
-        [DllImport("user32.dll")]
-        public static extern bool GetWindowRect(IntPtr hwnd, ref Rect rectangle);
-        #endregion
-
-        #region User32 dll params
-        private const int SWP_NOOWNERZORDER = 0x200;
-        private const int SWP_NOREDRAW = 0x8;
-        private const int SWP_NOZORDER = 0x4;
-        private const int SWP_SHOWWINDOW = 0x0040;
-        private const int WS_EX_MDICHILD = 0x40;
-        private const int SWP_FRAMECHANGED = 0x20;
-        private const int SWP_NOACTIVATE = 0x10;
-        private const int SWP_ASYNCWINDOWPOS = 0x4000;
-        private const int SWP_NOMOVE = 0x2;
-        private const int SWP_NOSIZE = 0x1;
-        private const int GWL_STYLE = (-16);
-        private const int WS_VISIBLE = 0x10000000;
-        private const int WS_CHILD = 0x40000000;
-        #endregion
     }
 }

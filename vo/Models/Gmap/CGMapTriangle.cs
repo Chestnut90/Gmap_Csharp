@@ -28,58 +28,7 @@ namespace vo.Models.Gmap
         {
             this.MarkerType = MarkerType.TRIANGLE;
         }
-
-
-        /// <summary>
-        /// collection changed event for boundary points.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        protected override void PointLatLngs_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            int count = this.PointLatLngs.Count;
-
-            int selectedIndex = 0;
-            if (!(e == null))
-            {
-                selectedIndex = e.NewStartingIndex;
-            }
-
-            if (!this.IsAlarm)
-            {
-                return;
-            }
-
-            if (selectedIndex == 2 | selectedIndex == 3)
-            {
-                return;
-            }
-
-            var boundaryPoints = this.CalcBoundaryPointLatLngs(this.AlarmDistance);
-
-            if (count <= 2)
-            {
-                this.PointLatLngs.Add(boundaryPoints.Item1);
-                this.PointLatLngs.Add(boundaryPoints.Item2);
-            }
-            else
-            {
-                this.PointLatLngs[2] = boundaryPoints.Item1;
-                this.PointLatLngs[3] = boundaryPoints.Item2;
-            }
-        }
         
-        /// <summary>
-        /// Add two PointLatLng as left top and right bottom by ordered.
-        /// </summary>
-        /// <param name="addDistance"></param>
-        private (PointLatLng, PointLatLng) CalcBoundaryPointLatLngs(double addDistance)
-        {
-            PointLatLng point1 = this.PointLatLngs[0];
-            PointLatLng point2 = this.PointLatLngs[1];
-            return LatLngCommon.CalcOuterRectangleWithInnerCircle(point1, point2, addDistance);
-        }
-
         public override Path CreatePath(List<Point> localPath, bool addBlurEffect)
         {
             Path shape = (this.Shape as Path);
@@ -130,28 +79,11 @@ namespace vo.Models.Gmap
                 figures[0] = triagnelFigure;
             }
         }
-
-        public void SetNextPoint(PointLatLng point)
+       
+        protected override List<PointLatLng> CalcBoundaryPoints(List<PointLatLng> points, double distance)
         {
-            this.PointLatLngs[1] = point;
+            var result = LatLngCommon.CalcOuterRectangleWithInnerCircle(points[0], points[1], distance);
+            return new List<PointLatLng>() { result.Item1, result.Item2 };
         }
-
-        protected override UIElement SetShape()
-        {
-            this.Shape = new Path();
-            this.GeometryGroup = new GeometryGroup();
-            this.OriginGeometry = new PathGeometry();
-            this.AlarmGeometry = new PathGeometry();
-            this.GeometryGroup.Children.Add(OriginGeometry);
-            this.GeometryGroup.Children.Add(AlarmGeometry);
-            this.GeometryGroup.FillRule = FillRule.Nonzero;
-
-            (this.Shape as Path).Data = this.GeometryGroup;
-            (this.Shape as Path).Stroke = Brushes.Red;
-            (this.Shape as Path).StrokeThickness = 1.5;
-            (this.Shape as Path).Fill = this.tiling();
-            return this.Shape;
-        }
-
     }
 }

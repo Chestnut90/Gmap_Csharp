@@ -30,50 +30,6 @@ namespace vo.Models.Gmap
         }
 
         /// <summary>
-        /// collection changed event for boundary points.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        protected override void PointLatLngs_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            int count = this.PointLatLngs.Count;
-
-            int selectedIndex = 0;
-            if (!(e == null))
-            {
-                selectedIndex = e.NewStartingIndex;
-            }
-
-            if (!this.IsAlarm)
-            {
-                return;
-            }
-
-            if (selectedIndex == 2 | selectedIndex == 3)
-            {
-                return;
-            }
-
-            var boundaryPoints = this.CalcBoundaryPointLatLngs(this.AlarmDistance);
-
-            if (count <= 2)
-            {
-                this.PointLatLngs.Add(boundaryPoints.Item1);
-                this.PointLatLngs.Add(boundaryPoints.Item2);
-            }
-            else
-            {
-                this.PointLatLngs[2] = boundaryPoints.Item1;
-                this.PointLatLngs[3] = boundaryPoints.Item2;
-            }
-        }
-
-        public void SetNextPoint(PointLatLng point)
-        {
-            this.PointLatLngs[1] = point;
-        }
-
-        /// <summary>
         /// Drawing function from Ellipse.
         /// </summary>
         /// <param name="localPath"></param>
@@ -127,29 +83,6 @@ namespace vo.Models.Gmap
         }
 
         /// <summary>
-        /// Add two PointLatLng as Right of middle and Up of middle by ordered.
-        /// </summary>
-        /// <param name="addDistance"></param>
-        private (PointLatLng, PointLatLng) CalcBoundaryPointLatLngs(double distance)
-        {
-            PointLatLng point1 = this.PointLatLngs[0];
-            PointLatLng point2 = this.PointLatLngs[1];
-
-            // new left top
-            var leftTopUpValue = LatLngCommon.CalcDistanceAndBearing(point1, distance, 0.0);      // 1. origin left top to upside distance
-            var leftTopLeftValue = LatLngCommon.CalcDistanceAndBearing(point1, distance, 270.0);  // 2. origin left top to left side distance.
-            PointLatLng newLeftTop = new PointLatLng(leftTopUpValue.Item1.Lat, leftTopLeftValue.Item1.Lng);
-
-            // new right bottom
-            var rightBottomDownValue = LatLngCommon.CalcDistanceAndBearing(point2, distance, 180.0);      // 1. origin right bottom to downside distance
-            var rightBottomRightValue = LatLngCommon.CalcDistanceAndBearing(point2, distance, 90.0);      // 2. origin right bottom to right side distance.
-            PointLatLng newRightBottom = new PointLatLng(rightBottomDownValue.Item1.Lat, rightBottomRightValue.Item1.Lng);
-
-            return (newLeftTop, newRightBottom);
-        }
-
-        // TODO
-        /// <summary>
         /// default setting.
         /// </summary>
         /// <returns></returns>
@@ -166,8 +99,27 @@ namespace vo.Models.Gmap
             (this.Shape as Path).Data = GeometryGroup;
             (this.Shape as Path).Stroke = Brushes.Red;
             (this.Shape as Path).StrokeThickness = 1.5;
-            (this.Shape as Path).Fill = this.tiling();
+            (this.Shape as Path).Fill = this.Tiling();
             return this.Shape;
+        }
+
+        protected override List<PointLatLng> CalcBoundaryPoints(List<PointLatLng> points, double distance)
+        {
+            var result = this.PointSwap(points[0], points[1]);
+            PointLatLng point1 = result.Item1;
+            PointLatLng point2 = result.Item2;
+
+            // new left top
+            var leftTopUpValue = LatLngCommon.CalcDistanceAndBearing(point1, distance, 0.0);      // 1. origin left top to upside distance
+            var leftTopLeftValue = LatLngCommon.CalcDistanceAndBearing(point1, distance, 270.0);  // 2. origin left top to left side distance.
+            PointLatLng newLeftTop = new PointLatLng(leftTopUpValue.Item1.Lat, leftTopLeftValue.Item1.Lng);
+
+            // new right bottom
+            var rightBottomDownValue = LatLngCommon.CalcDistanceAndBearing(point2, distance, 180.0);      // 1. origin right bottom to downside distance
+            var rightBottomRightValue = LatLngCommon.CalcDistanceAndBearing(point2, distance, 90.0);      // 2. origin right bottom to right side distance.
+            PointLatLng newRightBottom = new PointLatLng(rightBottomDownValue.Item1.Lat, rightBottomRightValue.Item1.Lng);
+
+            return new List<PointLatLng>() { newLeftTop, newRightBottom };
         }
     }
 }

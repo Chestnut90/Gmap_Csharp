@@ -16,9 +16,13 @@
             <ColumnDefinition Width="101*"/>
             <ColumnDefinition Width="295*"/>
         </Grid.ColumnDefinitions>
-        <Button x:Name="GetWindow" Click="GetWindow_Click" Content="GetWindow" Grid.Row="0" Grid.Column="0"/>
+        <Button x:Name="GetWindow" Content="GetWindow" Grid.Row="0" Grid.Column="0"/>
         <Button x:Name="GetWindow2" Click="GetWindow2_Click" Content="GetWindow2" Grid.Row="0" Grid.Column="1"/>
-        <StackPanel x:Name="MainStack"  Grid.Row="1" Grid.Column="0"/>
+        <ScrollViewer x:Name="ViewBox" Grid.Row="1" Grid.Column="0" Height="567">
+            <ScrollViewer.Content>
+                <StackPanel Name="ViewBoxStack"/>
+            </ScrollViewer.Content>
+        </ScrollViewer>
         <Grid Grid.Row="1" Grid.Column="1">
             <Views:UcMapControl/>
         </Grid>

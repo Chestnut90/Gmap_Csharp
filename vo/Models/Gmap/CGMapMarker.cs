@@ -17,7 +17,7 @@ using vo.Views;
 
 namespace vo.Models.Gmap
 {
-    class CGMapMarker : GMapMarker, IShapable
+    public abstract class CGMapMarker : GMapMarker, IShapable
     {
         public CGMapMarker(PointLatLng pos, string tag, int zIndex) : base(pos)
         {
@@ -33,36 +33,11 @@ namespace vo.Models.Gmap
 
         }
 
-        /// <summary>
-        /// need to override
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        protected virtual void PointLatLngs_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            throw new NotImplementedException();
-        }
+        #region Geometry
 
         protected GeometryGroup GeometryGroup { get; set; }
         protected Geometry OriginGeometry { get; set; }
         protected Geometry AlarmGeometry { get; set; }
-
-        /// <summary>
-        /// Type of Marker
-        /// </summary>
-        protected MarkerType MarkerType { get; set; }
-
-        /// <summary>
-        /// 경고 구역 설정
-        /// </summary>
-        protected bool IsAlarm { get; set; }
-
-        /// <summary>
-        /// 경고 구역 설정 거리
-        /// </summary>
-        protected double AlarmDistance { get; set; }
-
-        protected ObservableCollection<PointLatLng> PointLatLngs { get; set; }
 
         /// <summary>
         /// Define Shape of Derived class.
@@ -81,9 +56,54 @@ namespace vo.Models.Gmap
             (this.Shape as Path).Data = GeometryGroup;
             (this.Shape as Path).Stroke = Brushes.Red;
             (this.Shape as Path).StrokeThickness = 1.5;
-            (this.Shape as Path).Fill = Brushes.AliceBlue;
+            (this.Shape as Path).Fill = this.Tiling();
             return this.Shape;
         }
+
+        #endregion
+
+        protected ObservableCollection<PointLatLng> PointLatLngs { get; set; }
+
+        public virtual void SetNextPoint(PointLatLng point)
+        {
+            this.PointLatLngs[1] = point;
+        }
+
+        /// <summary>
+        /// need to override
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected void PointLatLngs_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (!this.IsAlarm)
+            {
+                this.BoundaryPoints = new List<PointLatLng>();
+                return;
+            }
+
+            // set boundaryPoints
+            this.BoundaryPoints = this.CalcBoundaryPoints(this.PointLatLngs.ToList(), this.AlarmDistance); 
+        }
+
+        /// <summary>
+        /// Type of Marker
+        /// </summary>
+        protected MarkerType MarkerType { get; set; }
+
+        /// <summary>
+        /// 경고 구역 설정
+        /// </summary>
+        protected bool IsAlarm { get; set; }
+
+        /// <summary>
+        /// 경고 구역 설정 거리
+        /// </summary>
+        protected double AlarmDistance { get; set; }
+
+        protected List<PointLatLng> BoundaryPoints { get; set; }
+
+        protected abstract List<PointLatLng> CalcBoundaryPoints(List<PointLatLng> points, double distance);
 
         /// <summary>
         /// Context menu
@@ -251,7 +271,17 @@ namespace vo.Models.Gmap
         #region Implementation Ishapable 
         public virtual List<PointLatLng> Points
         {
-            get => this.PointLatLngs.ToList();
+            get
+            {
+                if(this.BoundaryPoints is null)
+                {
+                    this.BoundaryPoints = new List<PointLatLng>();
+                }
+
+                IEnumerable<PointLatLng> t = this.PointLatLngs.Concat(this.BoundaryPoints);
+                return t.ToList();
+                //return new List<PointLatLng>(this.PointLatLngs).Concat(this.BoundaryPoints);
+            }
             set { throw new NotImplementedException("Use PointLatlngs property instead this. this property used for only get."); }
         }
 
@@ -261,8 +291,8 @@ namespace vo.Models.Gmap
         }
         #endregion
 
-        #region tiling
-        protected DrawingBrush tiling()
+        #region Common Functions
+        protected DrawingBrush Tiling()
         {
 
             //
@@ -310,6 +340,32 @@ namespace vo.Models.Gmap
             return tileBrushWithTiling;
             //tilingExampleRectangle.Fill = tileBrushWithTiling;
 
+        }
+
+        protected (PointLatLng, PointLatLng) PointSwap(PointLatLng point1, PointLatLng point2)
+        {
+            double lat1 = point1.Lat;
+            double lat2 = point2.Lat;
+            double lng1 = point1.Lng;
+            double lng2 = point2.Lng;
+
+            if (lat1 < lat2)
+            {
+                double temp = lat1;
+                lat1 = lat2;
+                lat2 = temp;
+            }
+
+            if (lng1 > lng2)
+            {
+                double temp = lng1;
+                lng1 = lng2;
+                lng2 = temp;
+            }
+
+            PointLatLng leftTop = new PointLatLng(lat1, lng1);
+            PointLatLng rightBottom = new PointLatLng(lat2, lng2);
+            return (leftTop, rightBottom);
         }
         #endregion
 
